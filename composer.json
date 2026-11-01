@@ -1,0 +1,26 @@
+{
+    "name": "inocean/messaging",
+    "description": "Shared asynchronous SMS infrastructure for Inocean ROP",
+    "version": "0.1.1",
+    "type": "shopware-platform-plugin",
+    "license": "proprietary",
+    "require": {
+        "php": ">=8.4",
+        "shopware/core": "~6.7.0 || ~6.8.0",
+        "symfony/http-client": "^7.0 || ^8.0",
+        "ext-sodium": "*",
+        "ext-mbstring": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "Inocean\\Messaging\\": "src/"
+        }
+    },
+    "extra": {
+        "shopware-plugin-class": "Inocean\\Messaging\\InoceanMessaging",
+        "label": {
+            "en-GB": "Inocean Messaging",
+            "zh-CN": "Inocean 短信服务"
+        }
+    }
+}

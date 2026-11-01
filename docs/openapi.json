@@ -1,0 +1,776 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "InoceanMessaging backend API",
+    "version": "0.1.0",
+    "description": "Trusted backend Shopware OAuth2 API. Native template CRUD uses Shopware DAL /api/ino-sms-template. Store API extensions are intentionally disabled until trusted adapters are installed."
+  },
+  "servers": [
+    {
+      "url": "https://YOUR_SHOPWARE_HOST"
+    }
+  ],
+  "paths": {
+    "/api/_action/inocean/messaging/send": {
+      "post": {
+        "summary": "Queue SMS; never indicates delivery",
+        "description": "Required Shopware ACL: inocean_messaging:send. Platform-wide backend permission; not tenant scoped.",
+        "security": [
+          {
+            "oauthBearer": []
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SmsTask"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "OAuth authentication required"
+          },
+          "403": {
+            "description": "Missing ACL"
+          },
+          "409": {
+            "description": "Consent, policy or idempotency conflict"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Send"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          }
+        ]
+      }
+    },
+    "/api/_action/inocean/messaging/messages": {
+      "get": {
+        "summary": "List 50 messages per page",
+        "description": "Required Shopware ACL: inocean_messaging:read. Platform-wide backend permission; not tenant scoped.",
+        "security": [
+          {
+            "oauthBearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "OAuth authentication required"
+          },
+          "403": {
+            "description": "Missing ACL"
+          },
+          "409": {
+            "description": "Consent, policy or idempotency conflict"
+          }
+        },
+        "parameters": [
+          {
+            "name": "scopeId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Uuid"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          }
+        ]
+      }
+    },
+    "/api/_action/inocean/messaging/messages/{id}": {
+      "get": {
+        "summary": "Read task status within scope",
+        "description": "Required Shopware ACL: inocean_messaging:read. Platform-wide backend permission; not tenant scoped.",
+        "security": [
+          {
+            "oauthBearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SmsTask"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "OAuth authentication required"
+          },
+          "403": {
+            "description": "Missing ACL"
+          },
+          "409": {
+            "description": "Consent, policy or idempotency conflict"
+          },
+          "404": {
+            "description": "Task not found in scope"
+          }
+        },
+        "parameters": [
+          {
+            "name": "scopeId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Uuid"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/api/_action/inocean/messaging/usage": {
+      "get": {
+        "summary": "Current UTC month aggregates and quota",
+        "description": "Required Shopware ACL: inocean_messaging:read. Platform-wide backend permission; not tenant scoped.",
+        "security": [
+          {
+            "oauthBearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "OAuth authentication required"
+          },
+          "403": {
+            "description": "Missing ACL"
+          },
+          "409": {
+            "description": "Consent, policy or idempotency conflict"
+          }
+        },
+        "parameters": [
+          {
+            "name": "scopeId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/api/_action/inocean/messaging/preview": {
+      "post": {
+        "summary": "Render scalar Twig template and count SMS segments; no SMS sent",
+        "description": "Required Shopware ACL: inocean_messaging:manage. Platform-wide backend permission; not tenant scoped.",
+        "security": [
+          {
+            "oauthBearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "OAuth authentication required"
+          },
+          "403": {
+            "description": "Missing ACL"
+          },
+          "409": {
+            "description": "Consent, policy or idempotency conflict"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Preview"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/_action/inocean/messaging/consent": {
+      "get": {
+        "summary": "Consent audit metadata and active/inactive suppression",
+        "description": "Required Shopware ACL: inocean_messaging:manage. Platform-wide backend permission; not tenant scoped.",
+        "security": [
+          {
+            "oauthBearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "OAuth authentication required"
+          },
+          "403": {
+            "description": "Missing ACL"
+          },
+          "409": {
+            "description": "Consent, policy or idempotency conflict"
+          }
+        },
+        "parameters": [
+          {
+            "name": "scopeId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Uuid"
+            }
+          },
+          {
+            "name": "phone",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\+[1-9][0-9]{7,14}$"
+            }
+          }
+        ]
+      },
+      "post": {
+        "summary": "Append consent evidence or marketing opt-out",
+        "description": "Required Shopware ACL: inocean_messaging:manage. Platform-wide backend permission; not tenant scoped.",
+        "security": [
+          {
+            "oauthBearer": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "OAuth authentication required"
+          },
+          "403": {
+            "description": "Missing ACL"
+          },
+          "409": {
+            "description": "Consent, policy or idempotency conflict"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Consent"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/_action/inocean/messaging/suppression": {
+      "post": {
+        "summary": "Add global or scope suppression",
+        "description": "Required Shopware ACL: inocean_messaging:manage. Platform-wide backend permission; not tenant scoped. active:false requires reconciliation evidence and purpose:all. To clear marketing use express consent API.",
+        "security": [
+          {
+            "oauthBearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "OAuth authentication required"
+          },
+          "403": {
+            "description": "Missing ACL"
+          },
+          "409": {
+            "description": "Consent, policy or idempotency conflict"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Suppression"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/_action/inocean/messaging/providers/test": {
+      "post": {
+        "summary": "Read-only provider account connectivity test; no SMS",
+        "description": "Required Shopware ACL: inocean_messaging:manage. Platform-wide backend permission; not tenant scoped.",
+        "security": [
+          {
+            "oauthBearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "OAuth authentication required"
+          },
+          "403": {
+            "description": "Missing ACL"
+          },
+          "409": {
+            "description": "Consent, policy or idempotency conflict"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Provider"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/_action/inocean/messaging/providers/switch": {
+      "post": {
+        "summary": "Set default provider for scope",
+        "description": "Required Shopware ACL: inocean_messaging:manage. Platform-wide backend permission; not tenant scoped.",
+        "security": [
+          {
+            "oauthBearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "OAuth authentication required"
+          },
+          "403": {
+            "description": "Missing ACL"
+          },
+          "409": {
+            "description": "Consent, policy or idempotency conflict"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Provider"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/inocean/messaging/webhook/telnyx": {
+      "post": {
+        "summary": "telnyx signed webhook",
+        "description": "Provider signature required. Telnyx Ed25519 timestamp|body; Plivo body-binding V3 only. Duplicate events return 200. Uncorrelated events roll back and return 5xx for provider retry.",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Processed or duplicate"
+          },
+          "403": {
+            "description": "Invalid signature"
+          },
+          "413": {
+            "description": "Payload exceeds 64KiB"
+          }
+        }
+      }
+    },
+    "/inocean/messaging/webhook/plivo": {
+      "post": {
+        "summary": "plivo signed webhook",
+        "description": "Provider signature required. Telnyx Ed25519 timestamp|body; Plivo body-binding V3 only. Duplicate events return 200. Uncorrelated events roll back and return 5xx for provider retry.",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Processed or duplicate"
+          },
+          "403": {
+            "description": "Invalid signature"
+          },
+          "413": {
+            "description": "Payload exceeds 64KiB"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "oauthBearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "Shopware OAuth2"
+      }
+    },
+    "schemas": {
+      "Uuid": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{32}$"
+      },
+      "SmsTask": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "status": {
+            "type": "string"
+          },
+          "provider": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "status"
+        ]
+      },
+      "Send": {
+        "type": "object",
+        "properties": {
+          "scopeId": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "phone": {
+            "type": "string",
+            "pattern": "^\\+[1-9][0-9]{7,14}$"
+          },
+          "body": {
+            "type": "string",
+            "maxLength": 6000
+          },
+          "purpose": {
+            "type": "string",
+            "enum": [
+              "transactional",
+              "marketing"
+            ]
+          },
+          "templateCode": {
+            "type": "string"
+          },
+          "language": {
+            "type": "string",
+            "default": "en-CA"
+          },
+          "variables": {
+            "type": "object",
+            "additionalProperties": {
+              "type": [
+                "string",
+                "number",
+                "boolean",
+                "null"
+              ]
+            }
+          }
+        },
+        "required": [
+          "scopeId",
+          "phone"
+        ],
+        "description": "Provide body/purpose or templateCode/language/variables. Marketing adds sender identity and STOP text before idempotency fingerprint and segmentation."
+      },
+      "Consent": {
+        "type": "object",
+        "properties": {
+          "scopeId": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "phone": {
+            "type": "string",
+            "pattern": "^\\+[1-9][0-9]{7,14}$"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "transactional_authorization",
+              "marketing_express",
+              "marketing_implied",
+              "marketing_opt_out",
+              "unknown"
+            ]
+          },
+          "source": {
+            "type": "string",
+            "minLength": 1
+          },
+          "evidence": {
+            "type": "string",
+            "minLength": 1
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "clearMarketingOptOut": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "scopeId",
+          "phone",
+          "type",
+          "source",
+          "evidence"
+        ]
+      },
+      "Suppression": {
+        "type": "object",
+        "properties": {
+          "scopeId": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "phone": {
+            "type": "string",
+            "pattern": "^\\+[1-9][0-9]{7,14}$"
+          },
+          "purpose": {
+            "type": "string",
+            "enum": [
+              "all",
+              "marketing"
+            ],
+            "default": "all"
+          },
+          "global": {
+            "type": "boolean",
+            "default": false
+          },
+          "source": {
+            "type": "string"
+          },
+          "evidence": {
+            "type": "string"
+          },
+          "active": {
+            "type": "boolean",
+            "default": true
+          },
+          "provider": {
+            "type": "string",
+            "enum": [
+              "",
+              "telnyx",
+              "plivo"
+            ],
+            "default": ""
+          }
+        },
+        "required": [
+          "phone"
+        ]
+      },
+      "Preview": {
+        "type": "object",
+        "properties": {
+          "body": {
+            "type": "string",
+            "maxLength": 6000
+          },
+          "variables": {
+            "type": "object"
+          },
+          "allowedVariables": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "body",
+          "allowedVariables"
+        ]
+      },
+      "Provider": {
+        "type": "object",
+        "properties": {
+          "scopeId": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "provider": {
+            "type": "string",
+            "enum": [
+              "telnyx",
+              "plivo"
+            ]
+          }
+        },
+        "required": [
+          "scopeId",
+          "provider"
+        ]
+      }
+    }
+  }
+}
