@@ -1,0 +1,12 @@
+{
+  "unsubscribe.invalidTitle": "链接无效",
+  "unsubscribe.invalidBody": "此退订链接无效或已过期，请联系发送方。",
+  "unsubscribe.doneTitle": "已取消订阅",
+  "unsubscribe.doneBody": "您已取消该发送方的营销短信订阅。必要且已获授权的交易通知不受影响。",
+  "unsubscribe.confirmTitle": "短信订阅",
+  "unsubscribe.confirmBody": "确认后将取消该发送方的营销短信订阅。",
+  "unsubscribe.button": "取消短信订阅",
+  "customer.group": "短信订阅",
+  "customer.label": "是否订阅手机简讯",
+  "customer.help": "仅在客人明确同意营销短信后勾选；账单地址电话需为 E.164 格式。取消勾选将阻止营销短信。"
+}

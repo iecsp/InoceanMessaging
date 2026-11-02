@@ -8,6 +8,8 @@ Shopware 6.7 / PHP 8.4+ 短信后端插件，已按 6.8 升级草案预适配（
 - 同意证据、营销退订、全局/范围/provider 抑制、签名 Webhook 去重与状态更新。
 - GSM-7 / Unicode 分段、Sales Channel 配置与配额、费用聚合。
 
+新增功能：[后台模板、会员变量与退订链接](docs/customer-templates.md)。
+
 文档：[架构调查](docs/architecture.md)、[安装与运维](docs/deployment.md)、[接口与调用示例](docs/api.md)、[同意与退订](docs/consent.md)、[OpenAPI](docs/openapi.json)、[验证记录](docs/validation.md)。
 
 `scopeId` 是已存在的 Shopware Sales Channel UUID，不代表新建的门店或租户。管理 API 面向平台授权的可信后端；拥有相关 ACL 的集成可访问所有 Sales Channel。不得将此凭据交给浏览器/POS，也不宣称实现租户级管理员隔离。
@@ -28,3 +30,7 @@ php custom/plugins/InoceanMessaging/tests/run.php
 - Composer 支持 `~6.7.0 || ~6.8.0`，HTTP Client 支持 Symfony 7/8。
 - 服务 ID、别名、DAL 标签、控制器公开性及无自动重试的短信 HTTP Client 工厂保持一致。
 - 实测结果及 6.8 正式版复测范围见 [验证记录](docs/validation.md)。
+
+## 0.2.1 界面语言
+
+模板管理、会员变量标签、Customer 订阅字段、供应商设置和公开退订页面支持英文、简体中文、繁体中文，各自显示对应语言，不再中英并列。语言文件位置、回退和退订页语言选择见 [会员与模板说明](docs/customer-templates.md)。模板正文仍由用户分别维护，不会随管理员界面语言自动改写。

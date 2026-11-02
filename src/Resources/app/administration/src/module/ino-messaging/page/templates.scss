@@ -1,0 +1,10 @@
+.ino-messaging-templates {
+    &__subheading { color: #64748b; font-weight: 400; }
+    &__search { display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: start; margin-bottom: 20px; }
+    &__variables { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+    &__hint { color: #64748b; font-size: 13px; line-height: 1.7; margin-top: 20px; }
+    &__preview { margin-top: 24px; padding: 24px; border-radius: 12px; background: #f0f5ff; border: 1px solid #d5e2ff;
+        p { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.7; margin-bottom: 16px; }
+        small { color: #64748b; }
+    }
+}

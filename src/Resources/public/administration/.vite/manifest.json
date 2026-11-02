@@ -1,0 +1,11 @@
+{
+  "main.js": {
+    "file": "assets/inocean-messaging-CtHM-fnK.js",
+    "name": "inocean-messaging",
+    "src": "main.js",
+    "isEntry": true,
+    "css": [
+      "assets/inocean-messaging-BRoz_7hG.css"
+    ]
+  }
+}

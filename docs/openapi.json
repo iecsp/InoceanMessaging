@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "InoceanMessaging backend API",
-    "version": "0.1.0",
-    "description": "Trusted backend Shopware OAuth2 API. Native template CRUD uses Shopware DAL /api/ino-sms-template. Store API extensions are intentionally disabled until trusted adapters are installed."
+    "version": "0.2.1",
+    "description": "Shopware OAuth2 backend API with Administration SMS template CRUD, customer scalar variables, customer SMS marketing preferences and authenticated public unsubscribe links."
   },
   "servers": [
     {
@@ -226,7 +226,7 @@
     "/api/_action/inocean/messaging/preview": {
       "post": {
         "summary": "Render scalar Twig template and count SMS segments; no SMS sent",
-        "description": "Required Shopware ACL: inocean_messaging:manage. Platform-wide backend permission; not tenant scoped.",
+        "description": "Requires ino_sms_template:read. Optional customerId additionally requires customer:read and scopeId. Preview links are nonfunctional placeholders and never send SMS.",
         "security": [
           {
             "oauthBearer": []
@@ -557,6 +557,111 @@
           }
         }
       }
+    },
+    "/api/_action/inocean/messaging/variables": {
+      "get": {
+        "summary": "List allowed customer variable names",
+        "security": [
+          {
+            "oauthBearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scalar member variable whitelist"
+          },
+          "403": {
+            "description": "Requires inocean_messaging:read"
+          }
+        }
+      }
+    },
+    "/inocean/messaging/unsubscribe/{token}": {
+      "get": {
+        "summary": "Render SMS marketing unsubscribe confirmation",
+        "security": [],
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 2048
+            }
+          },
+          {
+            "name": "lang",
+            "in": "query",
+            "required": false,
+            "description": "Preferred page language; otherwise negotiate Accept-Language, with English fallback. Traditional Chinese aliases such as zh-HK are accepted.",
+            "schema": {
+              "type": "string",
+              "example": "zh-CN"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Confirmation HTML; no state change"
+          },
+          "400": {
+            "description": "Invalid or expired authenticated token"
+          }
+        }
+      },
+      "post": {
+        "summary": "Confirm SMS marketing opt-out",
+        "security": [],
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 2048
+            }
+          },
+          {
+            "name": "lang",
+            "in": "query",
+            "required": false,
+            "description": "Preferred page language; otherwise negotiate Accept-Language, with English fallback. Traditional Chinese aliases such as zh-HK are accepted.",
+            "schema": {
+              "type": "string",
+              "example": "zh-CN"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Unsubscribed"
+          },
+          "400": {
+            "description": "Invalid or expired authenticated token"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "confirm": {
+                    "type": "string",
+                    "const": "yes"
+                  }
+                },
+                "required": [
+                  "confirm"
+                ]
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -631,13 +736,45 @@
                 "null"
               ]
             }
+          },
+          "customerId": {
+            "$ref": "#/components/schemas/Uuid"
           }
         },
         "required": [
-          "scopeId",
-          "phone"
+          "scopeId"
         ],
-        "description": "Provide body/purpose or templateCode/language/variables. Marketing adds sender identity and STOP text before idempotency fingerprint and segmentation."
+        "description": "Provide phone or customerId. customerId requires customer:read; the server resolves the billing phone and protected customer variables in the same Sales Channel. All marketing and customer SMS requires a configured HTTPS unsubscribeBaseUrl. Final links are encrypted, authenticated and included in segment/quota calculations.",
+        "allOf": [
+          {
+            "anyOf": [
+              {
+                "required": [
+                  "phone"
+                ]
+              },
+              {
+                "required": [
+                  "customerId"
+                ]
+              }
+            ]
+          },
+          {
+            "anyOf": [
+              {
+                "required": [
+                  "body"
+                ]
+              },
+              {
+                "required": [
+                  "templateCode"
+                ]
+              }
+            ]
+          }
+        ]
       },
       "Consent": {
         "type": "object",
@@ -745,6 +882,12 @@
             "items": {
               "type": "string"
             }
+          },
+          "customerId": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "scopeId": {
+            "$ref": "#/components/schemas/Uuid"
           }
         },
         "required": [

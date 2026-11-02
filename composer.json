@@ -1,7 +1,7 @@
 {
     "name": "inocean/messaging",
     "description": "Shared asynchronous SMS infrastructure for Inocean ROP",
-    "version": "0.1.1",
+    "version": "0.2.1",
     "type": "shopware-platform-plugin",
     "license": "proprietary",
     "require": {
@@ -20,7 +20,8 @@
         "shopware-plugin-class": "Inocean\\Messaging\\InoceanMessaging",
         "label": {
             "en-GB": "Inocean Messaging",
-            "zh-CN": "Inocean 短信服务"
+            "zh-CN": "Inocean 短信服务",
+            "zh-TW": "Inocean 簡訊服務"
         }
     }
 }

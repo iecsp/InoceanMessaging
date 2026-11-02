@@ -5,7 +5,7 @@ use Shopware\Core\Framework\Uuid\Uuid;
 final class SmsSuppressionService
 {
     public const GLOBAL = '00000000000000000000000000000000';
-    public function __construct(private readonly Connection $db, private readonly Privacy $privacy, private readonly SmsConsentService $consent) {}
+    public function __construct(private readonly Connection $db, private readonly Privacy $privacy, private readonly SmsConsentService $consent, private readonly ?CustomerProfileService $customers = null) {}
     public function set(string $scope, string $phone, string $purpose, string $provider, bool $active, string $source, ?string $eventAt = null): void {
         if (!Uuid::isValid($scope) || !preg_match('/^\+[1-9][0-9]{7,14}$/D',$phone) || !in_array($purpose,['all','marketing'],true) || !in_array($provider,['','telnyx','plivo'],true)) { throw new \InvalidArgumentException('Invalid suppression'); }
         $this->write($scope,$this->privacy->hash($phone),$purpose,$provider,$active,$source,$eventAt);
@@ -17,6 +17,10 @@ final class SmsSuppressionService
     public function providerOptOut(string $scope,string $hash,string $provider,string $event,?string $eventAt=null): void {
         $this->write($scope,$hash,'marketing','',true,$event,$eventAt);
         $this->write($scope,$hash,'all',$provider,true,$event,$eventAt);
+        if ($this->customers !== null) {
+            $cipher=$this->db->fetchOne('SELECT phone_cipher FROM ino_sms_message WHERE scope_id=UNHEX(?) AND phone_hash=? AND phone_cipher IS NOT NULL ORDER BY created_at DESC LIMIT 1',[$scope,$hash]);
+            if (is_string($cipher)) { $this->customers->unsubscribePhone($scope,$this->privacy->open($cipher)); }
+        }
     }
     public function assertAllowed(string $scope, string $hash, string $purpose, string $provider): void {
         $blocked = $this->db->fetchOne("SELECT 1 FROM ino_sms_suppression WHERE scope_id IN (UNHEX(?),UNHEX(?)) AND phone_hash=? AND active=1 AND purpose IN ('all',?) AND provider IN ('',?) LIMIT 1", [$scope,self::GLOBAL,$hash,$purpose,$provider]);
@@ -28,6 +32,7 @@ final class SmsSuppressionService
             $this->set($scope,$phone,'marketing','',true,'webhook:'.$event,$eventAt);
             $this->set($scope,$phone,'all',$provider,true,'webhook:'.$event,$eventAt);
             $this->consent->record($scope,$phone,'marketing_opt_out',$provider,$event);
+            $this->customers?->unsubscribePhone($scope,$phone);
             return 'stop';
         }
         if (in_array($word,['START','UNSTOP'],true)) {

@@ -1,0 +1,102 @@
+{
+  "ino-messaging": {
+    "general": {
+      "title": "簡訊服務",
+      "description": "管理簡訊範本與會員變數",
+      "templates": "簡訊範本",
+      "newTemplate": "新增範本",
+      "editTemplate": "編輯範本"
+    },
+    "actions": {
+      "create": "新增範本",
+      "back": "返回",
+      "save": "儲存範本",
+      "search": "搜尋",
+      "delete": "刪除",
+      "cancel": "取消",
+      "preview": "預覽，不傳送簡訊"
+    },
+    "list": {
+      "title": "範本庫",
+      "searchPlaceholder": "搜尋範本代碼",
+      "code": "範本代碼",
+      "purpose": "用途",
+      "scope": "適用範圍",
+      "active": "啟用",
+      "global": "全域",
+      "hint": "交易通知與行銷簡訊分別遵循同意與取消訂閱規則。"
+    },
+    "purpose": {
+      "transactional": "交易通知",
+      "marketing": "行銷簡訊"
+    },
+    "settings": {
+      "title": "範本設定",
+      "code": "範本代碼",
+      "purpose": "簡訊用途",
+      "scope": "銷售管道專用範本",
+      "scopePlaceholder": "全域預設",
+      "active": "啟用範本"
+    },
+    "content": {
+      "title": "內文與翻譯",
+      "language": "翻譯語言",
+      "body": "簡訊內文",
+      "placeholder": "{name}，您好！",
+      "allowedVariables": "允許的變數（以逗號分隔）",
+      "hint": "會員變數由伺服器讀取，僅允許使用純量值。安全取消訂閱連結會在傳送時產生，可插入 unsubscribeUrl 指定位置。"
+    },
+    "preview": {
+      "title": "範本預覽",
+      "scope": "會員所屬銷售管道",
+      "customer": "會員（選填）",
+      "variables": "業務變數（JSON）",
+      "summary": "{encoding} · {characters} 個字元 · 預計 {segments} 段。實際取消訂閱連結會影響長度。"
+    },
+    "variables": {
+      "customerFirstName": "名字",
+      "customerLastName": "姓氏",
+      "customerFullName": "完整姓名",
+      "customerNumber": "會員編號",
+      "customerCompany": "公司名稱",
+      "customerLanguage": "會員語言",
+      "unsubscribeUrl": "取消訂閱連結"
+    },
+    "delete": {
+      "title": "刪除簡訊範本",
+      "confirm": "確定要刪除範本「{code}」嗎？"
+    },
+    "notifications": {
+      "saved": "範本已儲存。",
+      "deleted": "範本已刪除。"
+    },
+    "errors": {
+      "invalidCode": "範本代碼須以小寫字母開頭，僅可使用小寫字母、數字與底線，例如 loyalty_promotion。",
+      "invalidVariable": "變數名稱須以字母開頭，僅可使用字母、數字與底線。",
+      "missingDefaultBody": "儲存前請填寫系統預設語言的內文。",
+      "missingPreviewScope": "預覽會員資料前，請先選擇銷售管道。",
+      "invalidJson": "請將業務變數填寫為有效的 JSON 物件。",
+      "invalidRequest": "無法處理請求，請檢查範本、必要變數與欄位內容。",
+      "unauthorized": "登入已過期，請重新登入。",
+      "forbidden": "您沒有執行此操作的權限。",
+      "notFound": "在此銷售管道中找不到所需的記錄。",
+      "conflict": "請求與目前資料或簡訊規則衝突，請重新載入記錄並檢查設定。",
+      "rateLimited": "請求過於頻繁，請稍後再試。",
+      "serverError": "伺服器無法完成請求，請稍後再試或檢查伺服器記錄。",
+      "requestFailed": "請求失敗，請檢查網路連線後再試。"
+    }
+  },
+  "sw-privileges": {
+    "permissions": {
+      "ino_messaging": {
+        "label": "簡訊範本"
+      }
+    },
+    "additional_permissions": {
+      "ino_messaging": {
+        "label": "簡訊服務",
+        "manageSubscriptions": "管理簡訊訂閱與同意記錄"
+      }
+    }
+  }
+}

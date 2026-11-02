@@ -60,3 +60,25 @@ docker rm -f ino-messaging-test-db ino-messaging-test-mariadb
 两插件配置改动前后用 Symfony loader 核对，服务定义、参数、工厂、标签、别名和公开性一致。宿主 PHP 8.5.12 通过 51 项独立检查及配置/OpenAPI 校验；PHP 8.4.26 / Shopware 6.7.15.1 / 独立 MySQL 8.4.13 通过 114 项完整检查和内核检查。启用 `FEATURE_ALL=v6.8.0.0` 后，独立缓存下的内核检查也通过。全部 PHP 文件在 PHP 8.4 / 8.5 上语法检查通过。
 
 这属于 6.8 草案预适配，尚未在正式 Shopware 6.8 / Symfony 8 / Twig 4 上执行；正式发布后仍需在该栈完成安装、更新和 API/Worker 复测。6.8 需要 PHP 8.5+，以及 MySQL 8.4+ 或 MariaDB 11.4+。已启用插件的业务库版本元数据本次未刷新。
+
+## 0.2.0 会员与后台模板增量验证（2026-11-01）
+
+- 两个独立临时数据库（MariaDB 11.8、MySQL 8.0）分别通过 `tests/members.php`：**146 项**回归/会员检查，另含真实 Kernel 容器、路由和 ACL 检查。
+- 模板 CRUD 使用真实 Shopware DAL（隔离与模板无关的 app-script post-write 订阅者），包含翻译创建、读取、更新和级联删除。
+- 已验证原生 customer custom_fields JSON 更新命令的 1/0 编码、授权 opt-in、变量防覆盖、跨 Sales Channel 拦截、链接篡改/过期、GET 不退订、POST 同步 Customer 偏好、重复确认与排队后退订。
+- Customer 偏好投影仓库在逻辑测试中为测试适配器；业务库只验证安装的原生字段为 bool、关联 customer、allowCustomerWrite=0，没有为真实客户改变偏好。
+- 后台插件资源通过当前 Shopware Vite 生产构建，PHP DI/config/OpenAPI 检查通过。
+- 已在当前环境更新到 0.2.0、应用非破坏性迁移并安装 Customer 自定义字段；未发送真实短信。
+- 公网域名退订路径当前仍是 Nuxt 404，需接入反向代理；本地路由返回预期的签名错误页面。应用加密/HMAC 密钥已按用户授权初始化到受保护的 .env.local，未输出密钥值。实际 HTTP GET 验证有效凭证显示确认页、无效凭证显示插件错误页。
+
+后台实操：在隔离 Cookie 的 `http://127.0.0.1:81/admin` 完成模板创建、重新读取、多语言编辑与会员预览；保留停用的 member_welcome 草稿（英文/简体/繁体）。Customer → Custom fields → Messaging 的订阅字段已在只读和编辑模式核对，未改变实际客户偏好。两个 localhost 端口实例的原生 bearerAuth Cookie 会冲突，故使用 127.0.0.1 隔离。公开退订/Webhook 使用独立 route scope，不依赖 Storefront 域名或 Sales Channel Context，签名校验保持不变。
+
+## 0.2.1 三语界面验证（2026-11-02）
+
+- `tests/localization.php`：三套后台语言包各 66 个键，三套服务端语言包各 10 个键；校验键名、插值占位符、Symfony 实际加载结果、静态 UI 引用与英文包无中文文字。
+- MariaDB 11.8 临时独立数据库执行 `tests/members.php`，**170 项**回归与会员检查通过，另含真实 Kernel/路由/ACL 检查。新增公开退订页三语、Accept-Language、显式参数优先级、繁体别名、英文回退、无效链接及成功页面检查。
+- PHP 8.4 语法、Shopware DI 容器、配置 XML XSD、OpenAPI 校验及本插件 Vite 生产构建通过；未引入新的构建依赖。
+- 已部署 0.2.1，原生 Customer 字段的三语标签核对正确，未更改真实客户偏好。后台英文模板列表与编辑页实操核对，原有模板正文保留。
+- 未发送真实短信，未修改 POS 前端或公网代理。此前记录的其他数据库/版本测试仍是对应历史版本的结果。
+
+实际本地 HTTP GET 复核：三种语言的有效短时合成凭证均显示各自确认按钮（200），无效凭证均显示各自错误页（400），Content-Language 匹配请求。仅 GET、未改变真实客户订阅。旧版缓存容器已清理，后台会话保留且页面可正常访问。

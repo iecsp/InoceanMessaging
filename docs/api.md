@@ -130,3 +130,9 @@ queued → sending → accepted → sent → delivered/failed。其他状态：s
 - [Plivo V3 签名](https://www.plivo.com/docs/voice/concepts/signature-validation)、[官方 SDK 规范化实现](https://github.com/plivo/plivo-python/blob/master/plivo/utils/signature_v3.py)
 - [Plivo Messaging 旧 V2 说明](https://www.plivo.com/docs/messaging/concepts/signature-validation)（本插件拒绝 V2）
 - [Plivo 短信错误码](https://www.plivo.com/docs/messaging/troubleshooting/error-codes)
+
+## 0.2.0 增量
+
+新增后台 Marketing → Messaging 模板管理和受限会员变量。`send` 可提供 customerId 而省略 phone；`preview` 可在具有 customer:read 的情况下读取会员标量信息，另外需要 scopeId。`GET /api/_action/inocean/messaging/variables` 返回变量名单。预览权限改为 ino_sms_template:read。
+
+会员发送、营销短信和自动退订链接、Customer 自定义订阅字段、公开 GET/POST 退订流程与 HTTPS 配置详见 [会员模板与退订指南](customer-templates.md)。公开退订页面只接受认证加密 token，GET 不修改订阅，POST confirm=yes 才取消营销订阅。

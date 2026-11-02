@@ -1,0 +1,102 @@
+{
+  "ino-messaging": {
+    "general": {
+      "title": "短信服务",
+      "description": "管理短信模板和会员变量",
+      "templates": "短信模板",
+      "newTemplate": "新建模板",
+      "editTemplate": "编辑模板"
+    },
+    "actions": {
+      "create": "新建模板",
+      "back": "返回",
+      "save": "保存模板",
+      "search": "搜索",
+      "delete": "删除",
+      "cancel": "取消",
+      "preview": "预览，不发送短信"
+    },
+    "list": {
+      "title": "模板库",
+      "searchPlaceholder": "搜索模板代码",
+      "code": "模板代码",
+      "purpose": "用途",
+      "scope": "适用范围",
+      "active": "启用",
+      "global": "全局",
+      "hint": "交易通知与营销短信分别执行同意和退订规则。"
+    },
+    "purpose": {
+      "transactional": "交易通知",
+      "marketing": "营销短信"
+    },
+    "settings": {
+      "title": "模板设置",
+      "code": "模板代码",
+      "purpose": "短信用途",
+      "scope": "销售渠道独立模板",
+      "scopePlaceholder": "全局默认",
+      "active": "启用模板"
+    },
+    "content": {
+      "title": "正文与翻译",
+      "language": "翻译语言",
+      "body": "短信正文",
+      "placeholder": "{name}，您好！",
+      "allowedVariables": "允许的变量（以逗号分隔）",
+      "hint": "会员变量由服务器读取，仅允许使用标量值。安全退订链接会在发送时生成，可插入 unsubscribeUrl 指定位置。"
+    },
+    "preview": {
+      "title": "模板预览",
+      "scope": "会员所属销售渠道",
+      "customer": "会员（可选）",
+      "variables": "业务变量（JSON）",
+      "summary": "{encoding} · {characters} 个字符 · 预计 {segments} 段。实际退订链接会影响长度。"
+    },
+    "variables": {
+      "customerFirstName": "名字",
+      "customerLastName": "姓氏",
+      "customerFullName": "完整姓名",
+      "customerNumber": "会员编号",
+      "customerCompany": "公司名称",
+      "customerLanguage": "会员语言",
+      "unsubscribeUrl": "退订链接"
+    },
+    "delete": {
+      "title": "删除短信模板",
+      "confirm": "确认删除模板“{code}”？"
+    },
+    "notifications": {
+      "saved": "模板已保存。",
+      "deleted": "模板已删除。"
+    },
+    "errors": {
+      "invalidCode": "模板代码须以小写字母开头，仅使用小写字母、数字和下划线，例如 loyalty_promotion。",
+      "invalidVariable": "变量名须以字母开头，仅使用字母、数字和下划线。",
+      "missingDefaultBody": "保存前请填写系统默认语言的正文。",
+      "missingPreviewScope": "预览会员资料前，请先选择销售渠道。",
+      "invalidJson": "请将业务变量填写为有效的 JSON 对象。",
+      "invalidRequest": "无法处理请求，请检查模板、必需变量和字段内容。",
+      "unauthorized": "登录已过期，请重新登录。",
+      "forbidden": "您没有执行此操作的权限。",
+      "notFound": "在此销售渠道中未找到所需记录。",
+      "conflict": "请求与当前数据或短信策略冲突，请重新加载记录并检查设置。",
+      "rateLimited": "请求过于频繁，请稍后重试。",
+      "serverError": "服务器未能完成请求，请稍后重试或检查服务器日志。",
+      "requestFailed": "请求失败，请检查网络连接后重试。"
+    }
+  },
+  "sw-privileges": {
+    "permissions": {
+      "ino_messaging": {
+        "label": "短信模板"
+      }
+    },
+    "additional_permissions": {
+      "ino_messaging": {
+        "label": "短信服务",
+        "manageSubscriptions": "管理短信订阅与同意记录"
+      }
+    }
+  }
+}

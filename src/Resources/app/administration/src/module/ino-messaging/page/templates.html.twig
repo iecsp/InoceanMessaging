@@ -1,0 +1,69 @@
+<sw-page class="ino-messaging-templates">
+    <template #smart-bar-header>
+        <h2>{{ $t('ino-messaging.general.title') }} <span class="ino-messaging-templates__subheading">/ {{ headerSubtitle }}</span></h2>
+    </template>
+    <template #smart-bar-actions>
+        <mt-button v-if="!editing && acl.can('ino_messaging.creator')" variant="primary" @click="$router.push({ name: 'ino.messaging.create' })">{{ $t('ino-messaging.actions.create') }}</mt-button>
+        <mt-button v-if="editing" variant="secondary" @click="$router.push({ name: 'ino.messaging.index' })">{{ $t('ino-messaging.actions.back') }}</mt-button>
+        <mt-button v-if="editing && canSave" variant="primary" :disabled="saving || loading" @click="save">{{ $t('ino-messaging.actions.save') }}</mt-button>
+    </template>
+    <template #content>
+        <sw-card-view>
+            <mt-banner v-if="error" variant="critical">{{ error }}</mt-banner>
+            <mt-loader v-if="loading" />
+            <template v-if="!editing">
+                <mt-card :title="$t('ino-messaging.list.title')" position-identifier="ino-messaging-library">
+                    <form class="ino-messaging-templates__search" @submit.prevent="search">
+                        <mt-text-field v-model="term" :placeholder="$t('ino-messaging.list.searchPlaceholder')" />
+                        <mt-button type="submit">{{ $t('ino-messaging.actions.search') }}</mt-button>
+                    </form>
+                    <sw-entity-listing v-if="records" :data-source="records" :repository="repository" :columns="columns" :is-loading="loading" :show-selection="false" :show-pagination="false" :show-actions="true" :allow-inline-edit="false" :allow-delete="false" :allow-edit="acl.can('ino_messaging.editor')" detail-route="ino.messaging.detail" :full-page="false" @page-change="pageChanged">
+                        <template #column-purpose="{ item }">{{ $t('ino-messaging.purpose.' + item.purpose) }}</template>
+                        <template #column-scopeId="{ item }">{{ item.scopeId === '00000000000000000000000000000000' ? $t('ino-messaging.list.global') : item.scopeId }}</template>
+                        <template #column-active="{ item }"><sw-icon :name="item.active ? 'regular-checkmark-xs' : 'regular-times-s'" size="16px" /></template>
+                        <template #more-actions="{ item }"><sw-context-menu-item v-if="acl.can('ino_messaging.deleter')" variant="danger" @click="deleteTarget = item">{{ $t('ino-messaging.actions.delete') }}</sw-context-menu-item></template>
+                        <template #delete-action><span aria-hidden="true"></span></template>
+                    </sw-entity-listing>
+                    <sw-pagination v-if="total > 25" :total="total" :limit="25" :page="page" @page-change="pageChanged" />
+                    <p class="ino-messaging-templates__hint">{{ $t('ino-messaging.list.hint') }}</p>
+                </mt-card>
+            </template>
+            <template v-else-if="model && !loading">
+                <mt-card :title="$t('ino-messaging.settings.title')" position-identifier="ino-messaging-template-settings">
+                    <sw-container columns="1fr 1fr" gap="24px">
+                        <mt-text-field v-model="model.code" :label="$t('ino-messaging.settings.code')" :disabled="!canSave" required />
+                        <sw-single-select v-model:value="model.purpose" :label="$t('ino-messaging.settings.purpose')" :options="purposeOptions" :disabled="!canSave" />
+                    </sw-container>
+                    <sw-entity-single-select v-model:value="scopeSelection" entity="sales_channel" :label="$t('ino-messaging.settings.scope')" :disabled="!canSave" :placeholder="$t('ino-messaging.settings.scopePlaceholder')" :show-clearable-button="true" />
+                    <mt-switch v-model="model.active" :label="$t('ino-messaging.settings.active')" :disabled="!canSave" />
+                </mt-card>
+                <mt-card :title="$t('ino-messaging.content.title')" position-identifier="ino-messaging-template-content">
+                    <sw-single-select v-model:value="languageId" :label="$t('ino-messaging.content.language')" :options="languageOptions" />
+                    <mt-textarea v-model="body" :label="$t('ino-messaging.content.body')" :disabled="!canSave" :rows="6" :placeholder="bodyPlaceholder" />
+                    <mt-text-field v-model="variableText" :label="$t('ino-messaging.content.allowedVariables')" :disabled="!canSave" />
+                    <div class="ino-messaging-templates__variables">
+                        <mt-button v-for="name in memberVariables" :key="name" size="small" variant="secondary" :title="name" :disabled="!canSave" @click="addVariable(name)">{{ $t('ino-messaging.variables.' + name) }}</mt-button>
+                    </div>
+                    <p class="ino-messaging-templates__hint">{{ $t('ino-messaging.content.hint') }}</p>
+                </mt-card>
+                <mt-card :title="$t('ino-messaging.preview.title')" position-identifier="ino-messaging-template-preview">
+                    <sw-entity-single-select v-model:value="previewScope" entity="sales_channel" :label="$t('ino-messaging.preview.scope')" />
+                    <sw-entity-single-select v-if="acl.can('customer:read')" v-model:value="previewCustomer" entity="customer" :criteria="customerCriteria" :label="$t('ino-messaging.preview.customer')" label-property="customerNumber" :show-clearable-button="true" />
+                    <mt-textarea v-model="previewVariables" :label="$t('ino-messaging.preview.variables')" :rows="3" />
+                    <mt-button variant="secondary" @click="preview">{{ $t('ino-messaging.actions.preview') }}</mt-button>
+                    <div v-if="previewBody" class="ino-messaging-templates__preview">
+                        <p>{{ previewBody }}</p>
+                        <small>{{ $t('ino-messaging.preview.summary', { encoding: previewMeta.encoding, characters: previewMeta.characters, segments: previewMeta.segments }) }}</small>
+                    </div>
+                </mt-card>
+            </template>
+        </sw-card-view>
+        <sw-modal v-if="deleteTarget" :title="$t('ino-messaging.delete.title')" variant="small" @modal-close="deleteTarget = null">
+            <p>{{ $t('ino-messaging.delete.confirm', { code: deleteTarget.code }) }}</p>
+            <template #modal-footer>
+                <mt-button variant="secondary" @click="deleteTarget = null">{{ $t('ino-messaging.actions.cancel') }}</mt-button>
+                <mt-button variant="critical" :disabled="saving" @click="remove">{{ $t('ino-messaging.actions.delete') }}</mt-button>
+            </template>
+        </sw-modal>
+    </template>
+</sw-page>

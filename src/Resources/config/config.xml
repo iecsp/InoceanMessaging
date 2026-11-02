@@ -1,15 +1,124 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopware/shopware/trunk/src/Core/System/SystemConfig/Schema/config.xsd"><card><title>Messaging backend</title>
-<input-field type="bool"><name>telnyxEnabled</name><label>Enable Telnyx</label><defaultValue>false</defaultValue></input-field>
-<input-field type="text"><name>telnyxFrom</name><label>Telnyx registered sender</label></input-field>
-<input-field type="text"><name>telnyxProfile</name><label>Telnyx Messaging Profile</label></input-field>
-<input-field type="bool"><name>plivoEnabled</name><label>Enable Plivo</label><defaultValue>false</defaultValue></input-field>
-<input-field type="text"><name>plivoFrom</name><label>Plivo registered sender</label></input-field>
-<input-field type="text"><name>defaultProvider</name><label>Primary provider: telnyx or plivo</label><defaultValue>telnyx</defaultValue></input-field>
-<input-field type="text"><name>backupProvider</name><label>Backup provider: telnyx or plivo</label><defaultValue>plivo</defaultValue></input-field>
-<input-field type="bool"><name>autoFailover</name><label>Enable safe failover</label><defaultValue>false</defaultValue></input-field>
-<input-field type="int"><name>maxAttempts</name><label>Maximum attempts (429 only)</label><defaultValue>3</defaultValue></input-field>
-<input-field type="int"><name>monthlySegments</name><label>Monthly segment quota</label><defaultValue>1000</defaultValue></input-field>
-<input-field type="int"><name>perMinute</name><label>Attempts per minute</label><defaultValue>30</defaultValue></input-field>
-<input-field type="int"><name>maxSegments</name><label>Maximum segments per SMS</label><defaultValue>6</defaultValue></input-field>
-<input-field type="text"><name>senderIdentity</name><label>Marketing sender business identity (required)</label></input-field><input-field type="int"><name>timeoutSeconds</name><label>Provider HTTP timeout seconds (1–30)</label><defaultValue>10</defaultValue></input-field></card></config>
+<?xml version='1.0' encoding='UTF-8'?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopware/shopware/trunk/src/Core/System/SystemConfig/Schema/config.xsd">
+    <card>
+        <title>Messaging backend</title>
+        <title lang="zh-CN">短信服务后台</title>
+        <title lang="zh-TW">簡訊服務後台</title>
+        <title lang="zh-HK">簡訊服務後台</title>
+        <input-field type="bool">
+            <name>telnyxEnabled</name>
+            <label>Enable Telnyx</label>
+            <label lang="zh-CN">启用 Telnyx</label>
+            <label lang="zh-TW">啟用 Telnyx</label>
+            <label lang="zh-HK">啟用 Telnyx</label>
+            <defaultValue>false</defaultValue>
+        </input-field>
+        <input-field type="text">
+            <name>telnyxFrom</name>
+            <label>Telnyx registered sender</label>
+            <label lang="zh-CN">Telnyx 已注册的发送号码</label>
+            <label lang="zh-TW">Telnyx 已註冊的發送號碼</label>
+            <label lang="zh-HK">Telnyx 已註冊的發送號碼</label>
+        </input-field>
+        <input-field type="text">
+            <name>telnyxProfile</name>
+            <label>Telnyx Messaging Profile</label>
+            <label lang="zh-CN">Telnyx 短信配置档案</label>
+            <label lang="zh-TW">Telnyx 簡訊設定檔</label>
+            <label lang="zh-HK">Telnyx 簡訊設定檔</label>
+        </input-field>
+        <input-field type="bool">
+            <name>plivoEnabled</name>
+            <label>Enable Plivo</label>
+            <label lang="zh-CN">启用 Plivo</label>
+            <label lang="zh-TW">啟用 Plivo</label>
+            <label lang="zh-HK">啟用 Plivo</label>
+            <defaultValue>false</defaultValue>
+        </input-field>
+        <input-field type="text">
+            <name>plivoFrom</name>
+            <label>Plivo registered sender</label>
+            <label lang="zh-CN">Plivo 已注册的发送号码</label>
+            <label lang="zh-TW">Plivo 已註冊的發送號碼</label>
+            <label lang="zh-HK">Plivo 已註冊的發送號碼</label>
+        </input-field>
+        <input-field type="text">
+            <name>defaultProvider</name>
+            <label>Primary provider: telnyx or plivo</label>
+            <label lang="zh-CN">主要供应商：telnyx 或 plivo</label>
+            <label lang="zh-TW">主要供應商：telnyx 或 plivo</label>
+            <label lang="zh-HK">主要供應商：telnyx 或 plivo</label>
+            <defaultValue>telnyx</defaultValue>
+        </input-field>
+        <input-field type="text">
+            <name>backupProvider</name>
+            <label>Backup provider: telnyx or plivo</label>
+            <label lang="zh-CN">备用供应商：telnyx 或 plivo</label>
+            <label lang="zh-TW">備用供應商：telnyx 或 plivo</label>
+            <label lang="zh-HK">備用供應商：telnyx 或 plivo</label>
+            <defaultValue>plivo</defaultValue>
+        </input-field>
+        <input-field type="bool">
+            <name>autoFailover</name>
+            <label>Enable safe failover</label>
+            <label lang="zh-CN">启用安全故障切换</label>
+            <label lang="zh-TW">啟用安全故障切換</label>
+            <label lang="zh-HK">啟用安全故障切換</label>
+            <defaultValue>false</defaultValue>
+        </input-field>
+        <input-field type="int">
+            <name>maxAttempts</name>
+            <label>Maximum attempts (429 only)</label>
+            <label lang="zh-CN">最大尝试次数（仅限 429 错误）</label>
+            <label lang="zh-TW">最大嘗試次數（僅限 429 錯誤）</label>
+            <label lang="zh-HK">最大嘗試次數（僅限 429 錯誤）</label>
+            <defaultValue>3</defaultValue>
+        </input-field>
+        <input-field type="int">
+            <name>monthlySegments</name>
+            <label>Monthly segment quota</label>
+            <label lang="zh-CN">每月短信分段额度</label>
+            <label lang="zh-TW">每月簡訊分段額度</label>
+            <label lang="zh-HK">每月簡訊分段額度</label>
+            <defaultValue>1000</defaultValue>
+        </input-field>
+        <input-field type="int">
+            <name>perMinute</name>
+            <label>Attempts per minute</label>
+            <label lang="zh-CN">每分钟发送尝试次数</label>
+            <label lang="zh-TW">每分鐘發送嘗試次數</label>
+            <label lang="zh-HK">每分鐘發送嘗試次數</label>
+            <defaultValue>30</defaultValue>
+        </input-field>
+        <input-field type="int">
+            <name>maxSegments</name>
+            <label>Maximum segments per SMS</label>
+            <label lang="zh-CN">每条短信的最大分段数</label>
+            <label lang="zh-TW">每則簡訊的最大分段數</label>
+            <label lang="zh-HK">每則簡訊的最大分段數</label>
+            <defaultValue>6</defaultValue>
+        </input-field>
+        <input-field type="text">
+            <name>senderIdentity</name>
+            <label>Marketing sender business identity (required)</label>
+            <label lang="zh-CN">营销短信发送企业身份（必填）</label>
+            <label lang="zh-TW">行銷簡訊發送企業身分（必填）</label>
+            <label lang="zh-HK">行銷簡訊發送企業身分（必填）</label>
+        </input-field>
+        <input-field type="int">
+            <name>timeoutSeconds</name>
+            <label>Provider HTTP timeout seconds (1–30)</label>
+            <label lang="zh-CN">供应商 HTTP 超时秒数（1–30）</label>
+            <label lang="zh-TW">供應商 HTTP 逾時秒數（1–30）</label>
+            <label lang="zh-HK">供應商 HTTP 逾時秒數（1–30）</label>
+            <defaultValue>10</defaultValue>
+        </input-field>
+        <input-field type="text">
+            <name>unsubscribeBaseUrl</name>
+            <label>Public HTTPS Shopware base URL for SMS unsubscribe links</label>
+            <label lang="zh-CN">短信退订链接使用的公开 HTTPS Shopware 基础地址</label>
+            <label lang="zh-TW">簡訊取消訂閱連結使用的公開 HTTPS Shopware 基礎網址</label>
+            <label lang="zh-HK">簡訊取消訂閱連結使用的公開 HTTPS Shopware 基礎網址</label>
+        </input-field>
+    </card>
+</config>

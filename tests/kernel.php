@@ -21,4 +21,7 @@ if($lint!==0) { throw new RuntimeException('Container lint failed'); } echo "PAS
 $response=$kernel->handle(Symfony\Component\HttpFoundation\Request::create('/api/_action/inocean/messaging/send','POST',[],[],[],['CONTENT_TYPE'=>'application/json'],'{}'));
 if($response->getStatusCode()!==401) { throw new RuntimeException('Unauthenticated Admin API must return 401, got '.$response->getStatusCode().' '.$response->getContent()); }
 echo "PASS HTTP Admin API denies missing OAuth token\n";
+$public=$kernel->handle(Symfony\Component\HttpFoundation\Request::create('/inocean/messaging/unsubscribe/invalid','GET'));
+if($public->getStatusCode()!==400 || !str_contains($public->getContent(),'Link unavailable')) { throw new RuntimeException('Public unsubscribe must render its own error page without a storefront domain'); }
+echo "PASS public unsubscribe route independent of storefront domain\n";
 $kernel->shutdown();

@@ -2,7 +2,7 @@
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Component\Messenger\{MessageBusInterface,Envelope};
 final class TestConfig extends SystemConfigService {
-    public array $values=['telnyxEnabled'=>true,'telnyxFrom'=>'+16045550001','plivoEnabled'=>true,'plivoFrom'=>'+16045550002','autoFailover'=>true,'monthlySegments'=>1000,'perMinute'=>100,'senderIdentity'=>'Test Restaurant'];
+    public array $values=['telnyxEnabled'=>true,'telnyxFrom'=>'+16045550001','plivoEnabled'=>true,'plivoFrom'=>'+16045550002','autoFailover'=>true,'maxSegments'=>12,'monthlySegments'=>1000,'perMinute'=>100,'senderIdentity'=>'Test Restaurant','unsubscribeBaseUrl'=>'https://sms.example.test'];
     public function __construct() {}
     public function get(string $key,?string $salesChannelId=null) { return $this->values[substr($key,strlen('InoceanMessaging.config.'))]??null; }
 }

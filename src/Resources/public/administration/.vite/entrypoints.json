@@ -1,0 +1,25 @@
+{
+  "base": "/bundles/inoceanmessaging/administration/",
+  "entryPoints": {
+    "inocean-messaging": {
+      "css": [
+        "/bundles/inoceanmessaging/administration/assets/inocean-messaging-BRoz_7hG.css"
+      ],
+      "dynamic": [],
+      "js": [
+        "/bundles/inoceanmessaging/administration/assets/inocean-messaging-CtHM-fnK.js"
+      ],
+      "legacy": false,
+      "preload": []
+    }
+  },
+  "legacy": false,
+  "metadatas": {},
+  "version": [
+    "7.1.0",
+    7,
+    1,
+    0
+  ],
+  "viteServer": null
+}

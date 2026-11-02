@@ -1,0 +1,102 @@
+{
+  "ino-messaging": {
+    "general": {
+      "title": "Messaging",
+      "description": "SMS templates and customer variables",
+      "templates": "SMS templates",
+      "newTemplate": "New template",
+      "editTemplate": "Edit template"
+    },
+    "actions": {
+      "create": "New template",
+      "back": "Back",
+      "save": "Save template",
+      "search": "Search",
+      "delete": "Delete",
+      "cancel": "Cancel",
+      "preview": "Preview without sending"
+    },
+    "list": {
+      "title": "Template library",
+      "searchPlaceholder": "Search template code",
+      "code": "Template code",
+      "purpose": "Purpose",
+      "scope": "Scope",
+      "active": "Active",
+      "global": "Global",
+      "hint": "Transactional notifications and marketing messages follow separate consent and opt-out rules."
+    },
+    "purpose": {
+      "transactional": "Transactional notification",
+      "marketing": "Marketing"
+    },
+    "settings": {
+      "title": "Template settings",
+      "code": "Template code",
+      "purpose": "Message purpose",
+      "scope": "Sales channel override",
+      "scopePlaceholder": "Global default",
+      "active": "Active template"
+    },
+    "content": {
+      "title": "Content and translations",
+      "language": "Translation language",
+      "body": "SMS body",
+      "placeholder": "Hello {name},",
+      "allowedVariables": "Allowed variables (comma-separated)",
+      "hint": "Customer variables are read by the server. Only scalar values are available. The authenticated unsubscribe link is generated when sending; insert unsubscribeUrl to choose its position."
+    },
+    "preview": {
+      "title": "Preview",
+      "scope": "Customer sales channel",
+      "customer": "Customer (optional)",
+      "variables": "Business variables (JSON)",
+      "summary": "{encoding} · {characters} characters · {segments} estimated segments. The final unsubscribe link changes the length."
+    },
+    "variables": {
+      "customerFirstName": "First name",
+      "customerLastName": "Last name",
+      "customerFullName": "Full name",
+      "customerNumber": "Customer number",
+      "customerCompany": "Company",
+      "customerLanguage": "Customer language",
+      "unsubscribeUrl": "Unsubscribe link"
+    },
+    "delete": {
+      "title": "Delete SMS template",
+      "confirm": "Delete template “{code}”?"
+    },
+    "notifications": {
+      "saved": "Template saved.",
+      "deleted": "Template deleted."
+    },
+    "errors": {
+      "invalidCode": "Use a lowercase template code containing letters, numbers and underscores, for example loyalty_promotion.",
+      "invalidVariable": "Variable names must start with a letter and contain only letters, numbers and underscores.",
+      "missingDefaultBody": "Enter the body in the default system language before saving.",
+      "missingPreviewScope": "Select a sales channel before previewing a customer.",
+      "invalidJson": "Enter a valid JSON object for business variables.",
+      "invalidRequest": "The request could not be processed. Check the template, required variables and field values.",
+      "unauthorized": "Your session has expired. Please sign in again.",
+      "forbidden": "You do not have permission to perform this action.",
+      "notFound": "The requested record was not found in this sales channel.",
+      "conflict": "The request conflicts with the current data or messaging policy. Reload the record and check its settings.",
+      "rateLimited": "Too many requests. Please try again shortly.",
+      "serverError": "The server could not complete the request. Please try again or check the server logs.",
+      "requestFailed": "The request failed. Check your connection and try again."
+    }
+  },
+  "sw-privileges": {
+    "permissions": {
+      "ino_messaging": {
+        "label": "Messaging templates"
+      }
+    },
+    "additional_permissions": {
+      "ino_messaging": {
+        "label": "Messaging",
+        "manageSubscriptions": "Manage SMS subscriptions and consent"
+      }
+    }
+  }
+}

@@ -8,23 +8,32 @@ use Shopware\Core\Framework\Uuid\Uuid;
 use Symfony\Component\Messenger\MessageBusInterface;
 final class MessagingService
 {
-    public function __construct(private readonly Connection $db, private readonly Privacy $privacy, private readonly SmsSuppressionService $suppression, private readonly ProviderManager $providers, private readonly Settings $settings, private readonly MessageBusInterface $bus, private readonly \Psr\Log\LoggerInterface $logger = new \Psr\Log\NullLogger()) {}
+    public function __construct(private readonly Connection $db, private readonly Privacy $privacy, private readonly SmsSuppressionService $suppression, private readonly ProviderManager $providers, private readonly Settings $settings, private readonly UnsubscribeToken $links, private readonly MessageBusInterface $bus, private readonly \Psr\Log\LoggerInterface $logger = new \Psr\Log\NullLogger(), private readonly ?CustomerProfileService $customers = null) {}
     public function enqueue(SmsRequest $request): array {
         if (!$this->db->fetchOne('SELECT 1 FROM sales_channel WHERE id=UNHEX(?)',[$request->scope])) { throw new \InvalidArgumentException('SMS scope must be an existing Sales Channel'); }
         if ($request->purpose === 'marketing') {
             $identity = trim((string)$this->settings->get('senderIdentity',$request->scope,''));
             if ($identity === '') { throw new \DomainException('marketing_sender_identity_required'); }
-            $request = new SmsRequest($request->scope,$request->phone,$identity.': '.$request->body.' Reply STOP to unsubscribe.',$request->purpose,$request->idempotencyKey,$request->templateCode);
+            $request = new SmsRequest($request->scope,$request->phone,$identity.': '.$request->body.' Reply STOP to unsubscribe.',$request->purpose,$request->idempotencyKey,$request->templateCode,$request->customerId);
         }
         $hash = $this->privacy->hash($request->phone);
-        $fingerprint = hash('sha256',json_encode([$hash,$request->body,$request->purpose,$request->templateCode],JSON_THROW_ON_ERROR));
+        $identity = [$hash,$request->body,$request->purpose,$request->templateCode];
+        if ($request->customerId !== null) { $identity[] = $request->customerId; }
+        $fingerprint = hash('sha256',json_encode($identity,JSON_THROW_ON_ERROR));
         $existing = $this->db->fetchAssociative('SELECT LOWER(HEX(id)) id,status,provider,fingerprint FROM ino_sms_message WHERE scope_id=UNHEX(?) AND idempotency_key=?',[$request->scope,$request->idempotencyKey]);
         if ($existing) { return $this->replay($existing,$fingerprint); }
+        if ($request->customerId !== null) { if ($this->customers === null) { throw new \DomainException('Customer messaging integration unavailable'); } $this->customers->assertRecipient($request->scope,$request->customerId,$request->phone,$request->purpose); }
         $this->suppression->assertAllowed($request->scope,$hash,$request->purpose,$this->providers->primary($request->scope));
-        if (Segments::count($request->body)['segments'] > (int)$this->settings->get('maxSegments',$request->scope,6)) { throw new \DomainException('sms_segment_limit'); }
+        $body = $request->body;
+        if ($request->purpose === 'marketing' || $request->customerId !== null || $this->links->configured($request->scope) || str_contains($body, UnsubscribeToken::PLACEHOLDER)) {
+            $url = $this->links->link($request->scope,$request->phone);
+            $body = str_contains($body, UnsubscribeToken::PLACEHOLDER) ? str_replace(UnsubscribeToken::PLACEHOLDER,$url,$body) : $body." Unsubscribe: ".$url;
+        }
+        if (strlen($body)>6000) { throw new \DomainException('sms_body_with_unsubscribe_link_too_long'); }
+        if (Segments::count($body)['segments'] > (int)$this->settings->get('maxSegments',$request->scope,6)) { throw new \DomainException('sms_segment_limit'); }
         $id = Uuid::randomHex(); $now = SmsConsentService::now();
         try {
-            $this->db->insert('ino_sms_message',['id'=>Uuid::fromHexToBytes($id),'scope_id'=>Uuid::fromHexToBytes($request->scope),'phone_hash'=>$hash,'phone_cipher'=>$this->privacy->seal($request->phone),'body_cipher'=>$this->privacy->seal($request->body),'purpose'=>$request->purpose,'template_code'=>$request->templateCode,'idempotency_key'=>$request->idempotencyKey,'fingerprint'=>$fingerprint,'status'=>'queued','segments'=>Segments::count($request->body)['segments'],'next_at'=>$now,'created_at'=>$now]);
+            $this->db->insert('ino_sms_message',['id'=>Uuid::fromHexToBytes($id),'scope_id'=>Uuid::fromHexToBytes($request->scope),'phone_hash'=>$hash,'phone_cipher'=>$this->privacy->seal($request->phone),'body_cipher'=>$this->privacy->seal($body),'purpose'=>$request->purpose,'template_code'=>$request->templateCode,'customer_id'=>$request->customerId === null ? null : Uuid::fromHexToBytes($request->customerId),'idempotency_key'=>$request->idempotencyKey,'fingerprint'=>$fingerprint,'status'=>'queued','segments'=>Segments::count($body)['segments'],'next_at'=>$now,'created_at'=>$now]);
         } catch (UniqueConstraintViolationException) {
             $existing = $this->db->fetchAssociative('SELECT LOWER(HEX(id)) id,status,provider,fingerprint FROM ino_sms_message WHERE scope_id=UNHEX(?) AND idempotency_key=?',[$request->scope,$request->idempotencyKey]);
             if (!$existing) { throw new \RuntimeException('Idempotency collision'); } return $this->replay($existing,$fingerprint);
@@ -43,7 +52,10 @@ final class MessagingService
             $row = $this->db->fetchAssociative('SELECT *,LOWER(HEX(scope_id)) scope FROM ino_sms_message WHERE id=UNHEX(?) FOR UPDATE',[$id]);
             if (!$row || $row['status'] !== 'queued' || $row['next_at'] > SmsConsentService::now()) { return null; }
             $provider = $row['provider'] ?: $this->providers->primary($row['scope']);
-            try { $this->suppression->assertAllowed($row['scope'],$row['phone_hash'],$row['purpose'],$provider); }
+            try {
+                if ($row['customer_id'] !== null) { if ($this->customers === null) { throw new \DomainException('customer_integration_unavailable'); } $this->customers->assertRecipient($row['scope'],bin2hex($row['customer_id']),$this->privacy->open($row['phone_cipher']),$row['purpose']); }
+                $this->suppression->assertAllowed($row['scope'],$row['phone_hash'],$row['purpose'],$provider);
+            }
             catch (\DomainException) { $this->update($id,['status'=>'suppressed','error_code'=>'sms_consent_or_suppression']); return null; }
             $limit = (int)$this->settings->get('monthlySegments',$row['scope'],1000);
             $used = (int)$this->db->fetchOne("SELECT COALESCE(SUM(segments),0) FROM ino_sms_message WHERE scope_id=? AND quota_month=? AND id<>UNHEX(?) AND status IN ('sending','accepted','sent','delivered','failed','unknown')",[$scope,gmdate('Y-m'),$id]);
@@ -59,6 +71,7 @@ final class MessagingService
         try {
             // Recheck immediately before external side effect (including retry/failover).
             $this->suppression->assertAllowed($row['scope'],$row['phone_hash'],$row['purpose'],$row['selected']);
+            if ($row['customer_id'] !== null) { $this->customers?->assertRecipient($row['scope'],bin2hex($row['customer_id']),$this->privacy->open($row['phone_cipher']),$row['purpose']); }
             $result = $this->providers->get($row['selected'])->send(new SmsRequest($row['scope'],$this->privacy->open($row['phone_cipher']),$this->privacy->open($row['body_cipher']),$row['purpose'],$row['idempotency_key']));
         } catch (\DomainException) { $result = new \Inocean\Messaging\Core\DTO\SmsResult('suppressed',error:'sms_consent_or_suppression'); }
         catch (\Throwable) { $this->logger->warning('SMS send outcome unknown', ['messageId'=>$id]); $result = new \Inocean\Messaging\Core\DTO\SmsResult('unknown',error:'worker_unknown'); }

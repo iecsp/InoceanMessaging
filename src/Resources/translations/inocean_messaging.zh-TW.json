@@ -1,0 +1,12 @@
+{
+  "unsubscribe.invalidTitle": "連結無效",
+  "unsubscribe.invalidBody": "此取消訂閱連結無效或已過期，請聯絡傳送方。",
+  "unsubscribe.doneTitle": "已取消訂閱",
+  "unsubscribe.doneBody": "您已取消此傳送方的行銷簡訊訂閱。必要且已獲授權的交易通知不受影響。",
+  "unsubscribe.confirmTitle": "簡訊訂閱",
+  "unsubscribe.confirmBody": "確認後將取消此傳送方的行銷簡訊訂閱。",
+  "unsubscribe.button": "取消簡訊訂閱",
+  "customer.group": "簡訊訂閱",
+  "customer.label": "是否訂閱手機簡訊",
+  "customer.help": "僅在客人明確同意行銷簡訊後勾選；帳單地址電話須為 E.164 格式。取消勾選將阻止行銷簡訊。"
+}

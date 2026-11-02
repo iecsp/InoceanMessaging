@@ -98,4 +98,12 @@ return static function (ContainerConfigurator $container): void {
     $services->set('Inocean\\Messaging\\Api\\ProviderController')
         ->public()
         ->tag('controller.service_arguments');
+    $services->set('Inocean\\Messaging\\Core\\Service\\CustomerProfileService')
+        ->arg('$customerRepository', service('customer.repository'));
+    $services->set('Inocean\\Messaging\\Core\\Service\\UnsubscribeToken');
+    $services->set('Inocean\\Messaging\\Core\\Service\\CustomerSubscriptionService');
+    $services->set('Inocean\\Messaging\\Subscriber\\CustomerSubscriptionSubscriber');
+    $services->set('Inocean\\Messaging\\Api\\UnsubscribeController')->arg('$translator', service('inocean.messaging.translator'))->public()->tag('controller.service_arguments');
+    $services->set('Inocean\\Messaging\\Routing\\PublicMessagingRouteScope')->autowire(false)->autoconfigure(false)->tag('shopware.route_scope');
+    $services->set('inocean.messaging.translator', 'Symfony\\Component\\Translation\\Translator')->autowire(false)->autoconfigure(false)->factory(['Inocean\\Messaging\\Core\\Service\\MessagingTranslationFactory', 'create']);
 };

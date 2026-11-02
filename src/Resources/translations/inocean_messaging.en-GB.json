@@ -1,0 +1,12 @@
+{
+  "unsubscribe.invalidTitle": "Link unavailable",
+  "unsubscribe.invalidBody": "This unsubscribe link is invalid or expired. Please contact the sender.",
+  "unsubscribe.doneTitle": "Unsubscribed",
+  "unsubscribe.doneBody": "You will no longer receive marketing SMS from this sender. Necessary transactional messages may still be sent when authorized.",
+  "unsubscribe.confirmTitle": "SMS preferences",
+  "unsubscribe.confirmBody": "Confirm to stop marketing SMS from this sender.",
+  "unsubscribe.button": "Unsubscribe",
+  "customer.group": "Messaging",
+  "customer.label": "Subscribed to SMS marketing",
+  "customer.help": "Select only after explicit marketing consent. Requires a billing phone in E.164 format. Clearing this blocks marketing SMS."
+}

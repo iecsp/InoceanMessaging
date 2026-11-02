@@ -2,7 +2,7 @@
 
 ## 安装/升级
 
-先在隔离环境备份与验证。要求 PHP >=8.4、sodium、mbstring、pdo_mysql，Shopware ~6.7，MariaDB 11.8 或项目现有 MySQL 8。插件无 SDK 依赖，复用项目 Symfony HttpClient、Twig、Messenger、DAL、System Config。Webhooks 使用 storefront 路由范围，当前项目已安装 shopware/storefront。
+先在隔离环境备份与验证。要求 PHP >=8.4、sodium、mbstring、pdo_mysql，Shopware ~6.7，MariaDB 11.8 或项目现有 MySQL 8。插件无 SDK 依赖，复用项目 Symfony HttpClient、Twig、Messenger、DAL、System Config。公开退订与 Webhook 使用独立 core route scope，不依赖 Storefront 域名映射或前端登录。
 
 以下命令供部署人员执行，本次开发未对业务库执行：
 

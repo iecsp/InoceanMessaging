@@ -16,7 +16,7 @@ function rejects(callable $fn,string $name): void { try { $fn(); } catch(Throwab
 putenv('INO_SMS_ENCRYPTION_KEY='.base64_encode(random_bytes(32)));
 putenv('INO_SMS_HASH_KEY='.bin2hex(random_bytes(32)));
 putenv('INO_SMS_TELNYX_API_KEY=test-only'); putenv('INO_SMS_PLIVO_AUTH_ID=test-only');putenv('INO_SMS_PLIVO_AUTH_TOKEN=test-only');putenv('INO_SMS_PLIVO_WEBHOOK_URL=https://example.test/inocean/messaging/webhook/plivo');
-$config=new TestConfig(); $settings=new Settings($config); $privacy=new Privacy();
+$config=new TestConfig(); $settings=new Settings($config); $privacy=new Privacy();$links=new \Inocean\Messaging\Core\Service\UnsubscribeToken($privacy,$settings);
 $scope=str_repeat('1',32); $other=str_repeat('2',32); $phone='+16045550123';
 putenv('INO_SMS_SENDER_SCOPES='.json_encode(['telnyx:+16045550001'=>$scope,'plivo:+16045550002'=>$scope]));
 $req=new SmsRequest($scope,$phone,'Hello','transactional','test');
@@ -74,11 +74,11 @@ foreach([$scope,$other] as $s) {$db->executeStatement('INSERT IGNORE INTO sales_
 foreach(['en-CA','zh-CN','zh-TW','fr-CA'] as $locale) { $id=md5($locale);$db->executeStatement('INSERT IGNORE INTO locale (id,code) VALUES (UNHEX(?),?)',[$id,$locale]);$db->executeStatement('INSERT IGNORE INTO language (id,locale_id) VALUES (UNHEX(?),UNHEX(?))',[$id,$id]); }
 // Only this guarded disposable database is reset; never use a business database here.
 foreach(['ino_sms_webhook_event','ino_sms_attempt','ino_sms_message','ino_sms_consent','ino_sms_suppression','ino_sms_template_translation','ino_sms_template'] as $table) { $db->executeStatement('DROP TABLE IF EXISTS '.$table); }
-$migration=new Inocean\Messaging\Migration\Migration1793404800Messaging();$migration->update($db);$migration->update($db);check(true,'Migration rerunnable on MySQL');
+$migration=new Inocean\Messaging\Migration\Migration1793404800Messaging();$migration->update($db);$migration->update($db);(new \Inocean\Messaging\Migration\Migration1793491200CustomerMessaging())->update($db);check(true,'Migration rerunnable on MySQL');
 foreach(['ino_sms_webhook_event','ino_sms_attempt','ino_sms_message','ino_sms_consent','ino_sms_suppression','ino_sms_template_translation','ino_sms_template'] as $table) { $db->executeStatement('DELETE FROM '.$table); }
 $consent=new SmsConsentService($db,$privacy);$suppression=new SmsSuppressionService($db,$privacy,$consent);$bus=new TestBus();
 $telnyx=new TelnyxProvider(new MockHttpClient(static fn()=>new MockResponse('{"data":{"id":"provider-'.uniqid().'"}}')),$settings);
-$manager=new ProviderManager($telnyx,$plivo,$settings);$messaging=new MessagingService($db,$privacy,$suppression,$manager,$settings,$bus);
+$manager=new ProviderManager($telnyx,$plivo,$settings);$messaging=new MessagingService($db,$privacy,$suppression,$manager,$settings,$links,$bus);
 rejects(fn()=>$messaging->enqueue($req),'Unknown transactional authorization denied');
 $consent->record($scope,$phone,'transactional_authorization','test','verified booking request');
 $a=$messaging->enqueue($req);$b=$messaging->enqueue($req);check($a['id']===$b['id'],'Persistent enqueue idempotency');
@@ -107,12 +107,12 @@ $event['data']['id']='event-old';$event['data']['occurred_at']='2026-10-30T20:00
 check((float)$read->status($scope,$a['id'])['cost']===0.0123,'Decimal provider cost recorded');check(count($read->usage($scope))>0,'Usage aggregation');
 // Retry uses a new attempt only after a definite 429 and backoff.
 $retryTelnyx=new TelnyxProvider(new MockHttpClient([new MockResponse('{}',['http_code'=>429]),new MockResponse('{"data":{"id":"retry-id"}}')]),$settings);
-$retryService=new MessagingService($db,$privacy,$suppression,new ProviderManager($retryTelnyx,$plivo,$settings),$settings,$bus);
+$retryService=new MessagingService($db,$privacy,$suppression,new ProviderManager($retryTelnyx,$plivo,$settings),$settings,$links,$bus);
 $retry=$retryService->enqueue(new SmsRequest($scope,$phone,'Retry','transactional','retry'));$retryService->deliver($retry['id']);check($read->status($scope,$retry['id'])['status']==='queued','429 schedules retry');
 $retryService->deliver($retry['id']);check((int)$db->fetchOne('SELECT attempt_count FROM ino_sms_message WHERE id=UNHEX(?)',[$retry['id']])===1,'Backoff respected');
 $db->executeStatement('UPDATE ino_sms_message SET next_at=UTC_TIMESTAMP(3) WHERE id=UNHEX(?)',[$retry['id']]);$retryService->deliver($retry['id']);check($read->status($scope,$retry['id'])['status']==='accepted','Retry accepted');
 // Timeout never crosses providers.
-$unknownService=new MessagingService($db,$privacy,$suppression,new ProviderManager(new TelnyxProvider(new MockHttpClient(new MockResponse('{}',['http_code'=>500])),$settings),$plivo,$settings),$settings,$bus);
+$unknownService=new MessagingService($db,$privacy,$suppression,new ProviderManager(new TelnyxProvider(new MockHttpClient(new MockResponse('{}',['http_code'=>500])),$settings),$plivo,$settings),$settings,$links,$bus);
 $unknown=$unknownService->enqueue(new SmsRequest($scope,$phone,'Unknown','transactional','unknown'));$unknownService->deliver($unknown['id']);$unknownService->deliver($unknown['id']);check($read->status($scope,$unknown['id'])['status']==='unknown','Unknown outcome quarantined');check((int)$db->fetchOne('SELECT attempt_count FROM ino_sms_message WHERE id=UNHEX(?)',[$unknown['id']])===1,'Unknown never resends');
 $config->values['telnyxEnabled']=false;$fallback=$messaging->enqueue(new SmsRequest($scope,$phone,'Fallback','transactional','fallback'));$messaging->deliver($fallback['id']);$messaging->deliver($fallback['id']);check($read->status($scope,$fallback['id'])['provider']==='plivo','Safe failover chooses backup sender');$config->values['telnyxEnabled']=true;
 $seed=new Inocean\Messaging\Command\SeedTemplatesCommand($db);$seed->run(new Symfony\Component\Console\Input\ArrayInput([]),new Symfony\Component\Console\Output\NullOutput());
@@ -145,7 +145,7 @@ $recovery=new Inocean\Messaging\Command\RecoverCommand($db,$bus);
 $recovery->run(new Symfony\Component\Console\Input\ArrayInput([]),new Symfony\Component\Console\Output\NullOutput());
 check($read->status($scope,$crashed['id'])['status']==='unknown','Interrupted worker quarantined by recovery');
 check($db->fetchOne('SELECT status FROM ino_sms_attempt WHERE message_id=UNHEX(?)',[$crashed['id']])==='unknown','Interrupted attempt audit quarantined with message');
-$providerBlockedService=new MessagingService($db,$privacy,$suppression,new ProviderManager(new TelnyxProvider(new MockHttpClient(new MockResponse('{"errors":[{"code":"40300"}]}',['http_code'=>403])),$settings),$plivo,$settings),$settings,$bus);
+$providerBlockedService=new MessagingService($db,$privacy,$suppression,new ProviderManager(new TelnyxProvider(new MockHttpClient(new MockResponse('{"errors":[{"code":"40300"}]}',['http_code'=>403])),$settings),$plivo,$settings),$settings,$links,$bus);
 $providerBlocked=$providerBlockedService->enqueue(new SmsRequest($scope,$phone,'Provider blocked','transactional','provider-blocked'));
 $providerBlockedService->deliver($providerBlocked['id']);
 check($read->status($scope,$providerBlocked['id'])['status']==='provider_suppressed','Provider opt-out stops sending without failover');
@@ -182,7 +182,7 @@ putenv('INO_SMS_TEST_ENQUEUE');
 check((int)$db->fetchOne("SELECT COUNT(*) FROM ino_sms_message WHERE idempotency_key='parallel-enqueue'")===1,'Concurrent enqueue keeps one idempotent task');
 check((int)$db->fetchOne("SELECT attempt_count FROM ino_sms_message WHERE idempotency_key='parallel-enqueue'")===1,'Concurrent enqueue and send creates one provider attempt');
 $failingBus=new class implements MessageBusInterface { public function dispatch(object $message,array $stamps=[]): Envelope { throw new RuntimeException('Simulated queue outage'); } };
-$outboxService=new MessagingService($db,$privacy,$suppression,$manager,$settings,$failingBus);
+$outboxService=new MessagingService($db,$privacy,$suppression,$manager,$settings,$links,$failingBus);
 $outbox=$outboxService->enqueue(new SmsRequest($scope,$phone,'Outbox survival','transactional','outbox-survival'));
 check($read->status($scope,$outbox['id'])['status']==='queued','Queue outage retains committed outbox');
 echo "$passed checks passed\n";

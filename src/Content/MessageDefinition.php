@@ -28,5 +28,6 @@ final class MessageDefinition extends OperationalDefinition
             new StringField('quota_month','quotaMonth'),
             new StringField('currency','currency'),
             new DateTimeField('provider_event_at','providerEventAt'),
+            new IdField('customer_id','customerId'),
     ]); }
 }

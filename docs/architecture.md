@@ -21,3 +21,9 @@
 数据库：ino_sms_message、ino_sms_attempt、ino_sms_consent（追加审计）、ino_sms_suppression、ino_sms_template、ino_sms_template_translation、ino_sms_webhook_event。usage 由消息/attempt 聚合，不重复建统计表。号码加密，匹配使用独立 keyed HMAC；正文加密；独立密钥由部署提供。状态及审计不保存原始 Webhook 和供应商错误正文。
 
 营销仅接受未过期 express consent；implied 仅记证据，默认不授权。STOP 写商户营销抑制及 provider 全用途抑制；START 对 Telnyx 按事件时间解除来源 provider 的限制；Plivo 仅记录并要求可信核对，不清除营销退订或创建同意。HELP 记录，不自动发送收费短信；确认回复由供应商管理。人工解除须有新的可信证据。
+
+## 0.2.0 增量
+
+新增原生 Administration 模板 CRUD、多语言和会员预览；Customer 订阅使用原生 CustomFieldSet DAL 生命周期注册，会员信息只投影允许的标量变量。消息表增加 nullable customer_id；使用 Customer/Profile 校验守住入队与 Worker 边界。公开退订凭证由现有 Secretbox 认证加密，GET 只展示确认，POST 写营销抑制和客户偏好，绝不据此创建同意。
+
+公开退订及 provider Webhook 使用独立 PublicMessagingRouteScope，并注册精确的 inocean/messaging 前缀，避免无 Storefront 域名的 Headless 后台被域名映射拦截。自定义 scope 无构造依赖，明确关闭 autowire/autoconfigure：Shopware RouteScopeCompilerPass 会在构建早期实例化 scope，不能让其成为尚未解析的 ChildDefinition。该行为按本地 6.7.15.1 源码与实际容器验证，不代表完整 6.8 运行验证。

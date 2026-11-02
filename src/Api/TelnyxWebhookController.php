@@ -3,7 +3,7 @@ namespace Inocean\Messaging\Api;
 use Inocean\Messaging\Core\Service\{WebhookSignature,WebhookService};
 use Symfony\Component\HttpFoundation\{Request,Response};
 use Symfony\Component\Routing\Attribute\Route;
-#[Route(defaults: ['_routeScope'=>['storefront'], '_csrf_protected'=>false])]
+#[Route(defaults: ['_routeScope'=>['ino-messaging-public'], '_csrf_protected'=>false])]
 final class TelnyxWebhookController
 {
     public function __construct(private readonly WebhookSignature $signature,private readonly WebhookService $webhooks) {}
