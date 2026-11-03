@@ -91,6 +91,22 @@
             <defaultValue>30</defaultValue>
         </input-field>
         <input-field type="int">
+            <name>enqueuePerMinute</name>
+            <label>New queued messages per minute per sales channel</label>
+            <label lang="zh-CN">每个销售渠道每分钟新入队短信上限</label>
+            <label lang="zh-TW">每個銷售通路每分鐘新入列簡訊上限</label>
+            <label lang="zh-HK">每個銷售通路每分鐘新入列簡訊上限</label>
+            <defaultValue>120</defaultValue>
+        </input-field>
+        <input-field type="int">
+            <name>maxPending</name>
+            <label>Maximum queued and sending messages per sales channel</label>
+            <label lang="zh-CN">每个销售渠道待发送及发送中短信上限</label>
+            <label lang="zh-TW">每個銷售通路待發送及發送中簡訊上限</label>
+            <label lang="zh-HK">每個銷售通路待發送及發送中簡訊上限</label>
+            <defaultValue>1000</defaultValue>
+        </input-field>
+        <input-field type="int">
             <name>maxSegments</name>
             <label>Maximum segments per SMS</label>
             <label lang="zh-CN">每条短信的最大分段数</label>

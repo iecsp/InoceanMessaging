@@ -61,6 +61,8 @@ bin/console cache:clear
 | maxAttempts | 3；仅明确未受理的 429 重试，最多 10 次 |
 | monthlySegments | 1000 |
 | perMinute | 30 |
+| enqueuePerMinute | 120，每个销售渠道滚动 60 秒内新增任务上限，范围 1–10000 |
+| maxPending | 1000，每个销售渠道 queued + sending 上限，范围 1–10000 |
 | maxSegments | 6 |
 | senderIdentity | 空；营销短信必须配置发送主体 |
 
@@ -110,3 +112,12 @@ bin/console inocean:messaging:retention --days=90
 - 费用为空：初始接受不是最终计费；等待包含金额的状态回调。Plivo 若回调不含币种，currency 保持 null，不猜测。
 - Webhook 403：核对签名、时钟、公钥、外部 URL、V3 token、form content-type。
 - 无模板翻译：安装语言、seed，或通过 DAL 写入 translations。
+
+
+## 0.2.2 安全更新部署
+
+先执行插件更新与数据库迁移，再恢复 HTTP/Worker 服务；部署期间暂停相关写入并重启长驻 Worker。新增迁移只增加 consent.customer_id 及索引，不删除历史记录。此次源码修复未对业务库执行更新或迁移。
+
+入队超限返回 HTTP 429 和 Retry-After: 60，不创建任务、不投递队列；相同请求的幂等重放仍可返回原任务。限制按 Sales Channel 汇总，包括所有调用身份；不同渠道不共享额度。没有引入 Redis、额外定时任务或全表计数。此保护限制成功入队数量，不能代替网关层对恶意 HTTP 请求的限流。
+
+客户订阅变更在 DAL 写入事务内同步授权。新生成的客户同意记录保存 customer_id，退订能找回历史号码哈希，当前号码无效也不会丢失已有授权身份。已有客户的原号码可从当前/本次修改前账单号码及历史客户短信中恢复；旧版未关联客户的同意记录不能凭空恢复。如果所有可用来源都缺失，保存返回 400 并回滚，需管理员按原授权证据通过 consent API 核对退订，不能认为界面已成功退订。此次迁移不会自动纠正升级前已经产生的字段/授权不一致。

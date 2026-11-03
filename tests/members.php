@@ -27,22 +27,25 @@ $db->executeStatement('CREATE TABLE IF NOT EXISTS customer_address (id BINARY(16
 $memberId=str_repeat('3',32);$addressId=str_repeat('4',32);$memberPhone='+16045550999';$scope=str_repeat('1',32);$other=str_repeat('2',32);
 $db->executeStatement('INSERT INTO customer (id,sales_channel_id,default_billing_address_id,first_name,last_name,customer_number,company,custom_fields,language_id) VALUES (UNHEX(?),UNHEX(?),UNHEX(?),?,?,?,?,?,UNHEX(?)) ON DUPLICATE KEY UPDATE custom_fields=VALUES(custom_fields),first_name=VALUES(first_name)',[$memberId,$scope,$addressId,'Alex','Chen','MEM-100','Inocean','{"ino_sms_subscribed":0,"keep_me":"preserved"}',md5('en-CA')]);
 $db->executeStatement('INSERT INTO customer_address (id,customer_id,phone_number) VALUES (UNHEX(?),UNHEX(?),?) ON DUPLICATE KEY UPDATE phone_number=VALUES(phone_number)',[$addressId,$memberId,$memberPhone]);
+// kernel.php creates a new connection; all transactional collaborators must share it.
+$consent=new SmsConsentService($db,$privacy);
+$suppression=new Inocean\Messaging\Core\Service\SmsSuppressionService($db,$privacy,$consent);
 $memberRepo=new TestMemberRepository($db);$profiles=new CustomerProfileService($db,$memberRepo);
 $subscriptions=new CustomerSubscriptionService($db,$profiles,$consent,$suppression,$privacy);
-$subscriber=new Inocean\Messaging\Subscriber\CustomerSubscriptionSubscriber($db,$subscriptions,new Psr\Log\NullLogger());
+$subscriber=new Inocean\Messaging\Subscriber\CustomerSubscriptionSubscriber($db,$subscriptions);
 $definition=$registry->getByEntityName('customer');
 $existence=new Shopware\Core\Framework\DataAbstractionLayer\Write\EntityExistence('customer',['id'=>Uuid::fromHexToBytes($memberId)],true,false,false,[]);
-function preferenceEvent(bool $active,Context $context): EntityWriteEvent {
+function preferenceEvent(bool $active,Context $context): Shopware\Core\Framework\DataAbstractionLayer\Write\Validation\PreWriteValidationEvent {
  global $definition,$existence,$memberId;
  $command=new Shopware\Core\Framework\DataAbstractionLayer\Write\Command\JsonUpdateCommand($definition,'custom_fields',['ino_sms_subscribed'=>(int)$active],['id'=>Uuid::fromHexToBytes($memberId)],$existence,'/');
- return EntityWriteEvent::create(Shopware\Core\Framework\DataAbstractionLayer\Write\WriteContext::createFromContext($context),[$command]);
+ return new Shopware\Core\Framework\DataAbstractionLayer\Write\Validation\PreWriteValidationEvent(Shopware\Core\Framework\DataAbstractionLayer\Write\WriteContext::createFromContext($context),[$command]);
 }
 $untrusted=new Shopware\Core\Framework\Api\Context\AdminApiSource(str_repeat('a',32));
 rejects(fn()=>$subscriber->beforeWrite(preferenceEvent(true,new Context($untrusted))),'Customer opt-in requires manage permission');
 rejects(fn()=>$subscriber->beforeWrite(preferenceEvent(true,Context::createDefaultContext())),'Untrusted system imports cannot grant marketing consent');
 $untrusted->setPermissions(['inocean_messaging:manage']);
 $event=preferenceEvent(true,new Context($untrusted));$subscriber->beforeWrite($event);
-$db->executeStatement('UPDATE customer SET custom_fields=JSON_SET(custom_fields,\'$.ino_sms_subscribed\',1) WHERE id=UNHEX(?)',[$memberId]);$event->success();
+$db->executeStatement('UPDATE customer SET custom_fields=JSON_SET(custom_fields,\'$.ino_sms_subscribed\',1) WHERE id=UNHEX(?)',[$memberId]);$subscriber->afterWrite(new Shopware\Core\Framework\DataAbstractionLayer\Write\Validation\PostWriteValidationEvent($event->getWriteContext(),$event->getCommands()));
 $member=$profiles->recipient($scope,$memberId);
 check($member['subscribed']===true,'Native numeric custom-field storage is recognized');
 check($member['variables']['customerFullName']==='Alex Chen','Member variables read from persisted customer');

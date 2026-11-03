@@ -14,6 +14,9 @@ final class SmsSuppressionService
         $at=$eventAt ?? SmsConsentService::now();
         $this->db->executeStatement('INSERT INTO ino_sms_suppression (id,scope_id,phone_hash,purpose,provider,active,source,created_at,event_at) VALUES (?,UNHEX(?),?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE active=IF(VALUES(event_at)>=event_at,VALUES(active),active),source=IF(VALUES(event_at)>=event_at,VALUES(source),source),updated_at=IF(VALUES(event_at)>=event_at,VALUES(created_at),updated_at),event_at=GREATEST(event_at,VALUES(event_at))', [Uuid::randomBytes(),$scope,$hash,$purpose,$provider,(int)$active,substr($source,0,128),SmsConsentService::now(),$at]);
     }
+    public function marketingOptOutHash(string $scope, string $hash, string $source): void {
+        $this->write($scope, $hash, 'marketing', '', true, $source);
+    }
     public function providerOptOut(string $scope,string $hash,string $provider,string $event,?string $eventAt=null): void {
         $this->write($scope,$hash,'marketing','',true,$event,$eventAt);
         $this->write($scope,$hash,'all',$provider,true,$event,$eventAt);

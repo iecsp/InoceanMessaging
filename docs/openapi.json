@@ -42,6 +42,18 @@
           },
           "409": {
             "description": "Consent, policy or idempotency conflict"
+          },
+          "429": {
+            "description": "Sales channel admission rate or queued/sending capacity exceeded. No new message is created; idempotent replay remains available.",
+            "headers": {
+              "Retry-After": {
+                "description": "Suggested delay in seconds before retrying admission.",
+                "schema": {
+                  "type": "integer",
+                  "example": 60
+                }
+              }
+            }
           }
         },
         "requestBody": {

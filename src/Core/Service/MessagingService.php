@@ -1,7 +1,6 @@
 <?php declare(strict_types=1);
 namespace Inocean\Messaging\Core\Service;
 use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Inocean\Messaging\Core\DTO\SmsRequest;
 use Inocean\Messaging\Core\Message\SendSmsMessage;
 use Shopware\Core\Framework\Uuid\Uuid;
@@ -31,13 +30,24 @@ final class MessagingService
         }
         if (strlen($body)>6000) { throw new \DomainException('sms_body_with_unsubscribe_link_too_long'); }
         if (Segments::count($body)['segments'] > (int)$this->settings->get('maxSegments',$request->scope,6)) { throw new \DomainException('sms_segment_limit'); }
-        $id = Uuid::randomHex(); $now = SmsConsentService::now();
-        try {
+        $id = Uuid::randomHex();
+        $result = $this->db->transactional(function () use ($request, $fingerprint, $id, $hash, $body): array {
+            // Serialize admissions per channel, including concurrent requests with different keys.
+            $this->db->fetchOne('SELECT id FROM sales_channel WHERE id=UNHEX(?) FOR UPDATE', [$request->scope]);
+            $existing = $this->db->fetchAssociative('SELECT LOWER(HEX(id)) id,status,provider,fingerprint FROM ino_sms_message WHERE scope_id=UNHEX(?) AND idempotency_key=? FOR UPDATE', [$request->scope, $request->idempotencyKey]);
+            if ($existing) { return $this->replay($existing, $fingerprint); }
+            $pendingLimit = max(1, min(10000, (int)$this->settings->get('maxPending', $request->scope, 1000)));
+            $minuteLimit = max(1, min(10000, (int)$this->settings->get('enqueuePerMinute', $request->scope, 120)));
+            // Bounded, indexed reads: never count the entire message history.
+            $pending = $this->db->fetchFirstColumn("SELECT id FROM ino_sms_message WHERE scope_id=UNHEX(?) AND status IN ('queued','sending') LIMIT ".$pendingLimit.' FOR UPDATE', [$request->scope]);
+            if (count($pending) >= $pendingLimit) { throw new \Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException(60, 'sms_pending_limit'); }
+            $recent = $this->db->fetchFirstColumn('SELECT id FROM ino_sms_message WHERE scope_id=UNHEX(?) AND created_at>=? LIMIT '.$minuteLimit.' FOR UPDATE', [$request->scope, gmdate('Y-m-d H:i:s', time()-60)]);
+            if (count($recent) >= $minuteLimit) { throw new \Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException(60, 'sms_enqueue_rate_limit'); }
+            $now = SmsConsentService::now();
             $this->db->insert('ino_sms_message',['id'=>Uuid::fromHexToBytes($id),'scope_id'=>Uuid::fromHexToBytes($request->scope),'phone_hash'=>$hash,'phone_cipher'=>$this->privacy->seal($request->phone),'body_cipher'=>$this->privacy->seal($body),'purpose'=>$request->purpose,'template_code'=>$request->templateCode,'customer_id'=>$request->customerId === null ? null : Uuid::fromHexToBytes($request->customerId),'idempotency_key'=>$request->idempotencyKey,'fingerprint'=>$fingerprint,'status'=>'queued','segments'=>Segments::count($body)['segments'],'next_at'=>$now,'created_at'=>$now]);
-        } catch (UniqueConstraintViolationException) {
-            $existing = $this->db->fetchAssociative('SELECT LOWER(HEX(id)) id,status,provider,fingerprint FROM ino_sms_message WHERE scope_id=UNHEX(?) AND idempotency_key=?',[$request->scope,$request->idempotencyKey]);
-            if (!$existing) { throw new \RuntimeException('Idempotency collision'); } return $this->replay($existing,$fingerprint);
-        }
+            return ['id'=>$id,'status'=>'queued','provider'=>null];
+        });
+        if ($result['id'] !== $id) { return $result; }
         // Persistent outbox survives a failed dispatch; recovery command dispatches it later.
         try { $this->bus->dispatch(new SendSmsMessage($id)); } catch (\Throwable) { $this->logger->error('SMS dispatch failed; persistent outbox retained', ['messageId'=>$id]); }
         return ['id'=>$id,'status'=>'queued','provider'=>null];

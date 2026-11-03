@@ -16,5 +16,6 @@ final class ConsentDefinition extends OperationalDefinition
             (new LongTextField('evidence', 'evidence')),
             new DateTimeField('expires_at','expiresAt'),
             new IntField('sequence','sequence'),
+            new IdField('customer_id','customerId'),
     ]); }
 }
