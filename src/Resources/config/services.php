@@ -1,5 +1,6 @@
 <?php declare(strict_types=1);
 
+use Inocean\Messaging\Core\Flow\SendMessageAction;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
@@ -29,6 +30,9 @@ return static function (ContainerConfigurator $container): void {
     $services->set('Inocean\\Messaging\\Core\\Service\\SmsTemplateService');
 
     $services->set('Inocean\\Messaging\\Core\\Service\\MessagingService');
+
+    $services->set(SendMessageAction::class)
+        ->tag('flow.action', ['key' => SendMessageAction::NAME, 'priority' => 490]);
 
     $services->set('Inocean\\Messaging\\Core\\Service\\ReadService');
 

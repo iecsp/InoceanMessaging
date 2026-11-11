@@ -1,5 +1,6 @@
 {
   "ino-messaging": {
+    "flow": {"title": "Send Message", "template": "SMS template", "recipient": "Recipient: Customer’s default billing phone"},
     "general": {
       "title": "Messaging",
       "description": "SMS templates and customer variables",

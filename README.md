@@ -1,6 +1,6 @@
 # InoceanMessaging
 
-Shopware 6.7 / PHP 8.4+ 短信后端插件，已按 6.8 升级草案预适配（6.8 要求 PHP 8.5+）。按本次确认范围，仅实现后端 API 与 Worker；不包含 POS、门店/租户系统、Administration 页面或 Flow 配置页面。当前项目中已安装启用；本次兼容性验证未发送真实短信。
+Shopware 6.7 / PHP 8.4+ 短信后端插件，已按 6.8 升级草案预适配（6.8 要求 PHP 8.5+）。提供短信 API、异步 Worker、后台模板管理，以及 Shopware 原生 Flow Builder 的短信动作。
 
 - Telnyx 主供应商、Plivo 备用，独立注册发送号码。
 - OAuth2 / ACL 管理 API；DAL 模板及原生语言翻译。
@@ -42,3 +42,14 @@ php custom/plugins/InoceanMessaging/tests/run.php
 - 每渠道新增入队速率与积压容量保护；超限返回 429，幂等重放不占额度。
 - 新增非破坏性数据库迁移，部署步骤及旧记录处理边界见 [安装与运维](docs/deployment.md)。
 - 新增 `tests/security.php`，使用独立数据库、真实 DAL 事务故障注入和模拟供应商。
+
+
+## 0.3.0 Flow Builder 短信动作
+
+进入 **Automation → Flow Builder → Flow → Action (THEN)**，为携带客户的触发器（例如 **Customer / Password / Changed**）添加 **Send Message / 发送短信 / 傳送簡訊**，选择一份启用的短信模板并保存。配置人员需要 Flow 编辑权限和短信模板读取权限。
+
+动作通过触发事件定位客户与销售渠道，读取客户默认账单地址的 E.164 手机号。模板绑定到选中的记录，须为全局模板或属于当前渠道。正文沿用客户语言和现有模板回退规则。Flow 提供[会员变量和退订链接](docs/customer-templates.md)，请选用只依赖这些变量的模板。
+
+动作成功时将短信加入现有队列，由 Worker 发送。交易短信需要独立的交易授权，营销短信需要明确同意和客户订阅，发送仍受退订、抑制和配额限制。模板不可用、客户与渠道不匹配或入队被拒绝时，Shopware 会将该动作记录为 Flow 执行失败。每次独立触发产生一次发送请求，队列重投继续使用现有消息领取机制。
+
+升级需要刷新插件、更新版本和缓存，并发布插件后台资源、重启长驻 Worker。此版本没有新增数据库迁移。扩展方式见 [Shopware 自定义 Flow 动作指南](https://developer.shopware.com/docs/guides/plugins/plugins/framework/flow/add-flow-builder-action.html)。

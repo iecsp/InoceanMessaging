@@ -1,0 +1,25 @@
+<sw-modal
+    :title="$t('ino-messaging.flow.title')"
+    @modal-close="$emit('modal-close')"
+>
+    <sw-entity-single-select
+        v-model:value="templateId"
+        entity="ino_sms_template"
+        label-property="code"
+        :criteria="templateCriteria"
+        :label="$t('ino-messaging.flow.template')"
+        required
+    >
+        <template #selection-label-property="{ item }">{{ templateLabel(item) }}</template>
+        <template #result-label-property="{ item }">{{ templateLabel(item) }}</template>
+    </sw-entity-single-select>
+    <p>{{ $t('ino-messaging.flow.recipient') }}</p>
+    <template #modal-footer>
+        <mt-button size="small" variant="secondary" @click="$emit('modal-close')">
+            {{ $t('global.default.cancel') }}
+        </mt-button>
+        <mt-button size="small" variant="primary" :disabled="!templateId" @click="saveAction">
+            {{ $t('global.default.save') }}
+        </mt-button>
+    </template>
+</sw-modal>

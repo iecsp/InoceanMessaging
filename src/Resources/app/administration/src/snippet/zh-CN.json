@@ -1,5 +1,6 @@
 {
   "ino-messaging": {
+    "flow": {"title": "发送短信", "template": "短信模板", "recipient": "收件人：客户默认账单地址的手机号"},
     "general": {
       "title": "短信服务",
       "description": "管理短信模板和会员变量",

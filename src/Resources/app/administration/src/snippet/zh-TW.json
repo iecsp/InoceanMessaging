@@ -1,5 +1,6 @@
 {
   "ino-messaging": {
+    "flow": {"title": "傳送簡訊", "template": "簡訊範本", "recipient": "收件人：顧客預設帳單地址的手機號碼"},
     "general": {
       "title": "簡訊服務",
       "description": "管理簡訊範本與會員變數",

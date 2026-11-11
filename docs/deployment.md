@@ -121,3 +121,16 @@ bin/console inocean:messaging:retention --days=90
 入队超限返回 HTTP 429 和 Retry-After: 60，不创建任务、不投递队列；相同请求的幂等重放仍可返回原任务。限制按 Sales Channel 汇总，包括所有调用身份；不同渠道不共享额度。没有引入 Redis、额外定时任务或全表计数。此保护限制成功入队数量，不能代替网关层对恶意 HTTP 请求的限流。
 
 客户订阅变更在 DAL 写入事务内同步授权。新生成的客户同意记录保存 customer_id，退订能找回历史号码哈希，当前号码无效也不会丢失已有授权身份。已有客户的原号码可从当前/本次修改前账单号码及历史客户短信中恢复；旧版未关联客户的同意记录不能凭空恢复。如果所有可用来源都缺失，保存返回 400 并回滚，需管理员按原授权证据通过 consent API 核对退订，不能认为界面已成功退订。此次迁移不会自动纠正升级前已经产生的字段/授权不一致。
+
+## 0.3.0 Flow Builder 资源
+
+升级时使用已编译的插件后台资源，部署后重新载入后台。插件本次无新增迁移。
+
+```sh
+bin/console plugin:refresh
+bin/console plugin:update InoceanMessaging
+bin/console assets:install
+bin/console cache:clear
+```
+
+按现有方式重启长驻 Worker。验收路径和短信模板要求见 [Flow Builder 使用说明](../README.md#030-flow-builder-短信动作)。

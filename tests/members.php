@@ -65,6 +65,52 @@ $replayed=$memberMessaging->enqueue(new SmsRequest($scope,$memberPhone,'Hi Alex,
 check($queued['id']===$replayed['id'],'Randomized unsubscribe links preserve enqueue idempotency');
 $stored=$privacy->open($db->fetchOne('SELECT body_cipher FROM ino_sms_message WHERE id=UNHEX(?)',[$queued['id']]));
 check(!str_contains($stored,UnsubscribeToken::PLACEHOLDER)&&str_contains($stored,'/inocean/messaging/unsubscribe/'),'Final SMS contains real recipient unsubscribe link');
+// Exercise the same persisted customer and sales-channel data Shopware supplies to a Flow action.
+$flowTemplateId = Uuid::randomHex();
+$db->insert('ino_sms_template', [
+    'id' => Uuid::fromHexToBytes($flowTemplateId),
+    'scope_id' => Uuid::fromHexToBytes($scope),
+    'code' => 'flow_password_changed',
+    'purpose' => 'transactional',
+    'allowed_variables' => '["customerFirstName"]',
+    'created_at' => SmsConsentService::now(),
+]);
+$db->insert('ino_sms_template_translation', [
+    'ino_sms_template_id' => Uuid::fromHexToBytes($flowTemplateId),
+    'language_id' => md5('zh-CN', true),
+    'body' => '{{ customerFirstName }}，您的密码已更改。',
+    'created_at' => SmsConsentService::now(),
+]);
+$db->executeStatement('UPDATE customer SET language_id=UNHEX(?) WHERE id=UNHEX(?)', [md5('zh-CN'), $memberId]);
+$flow = new Shopware\Core\Content\Flow\Dispatching\StorableFlow('customer.password.changed', Context::createDefaultContext(), [
+    Shopware\Core\Framework\Event\CustomerAware::CUSTOMER_ID => $memberId,
+    Shopware\Core\Framework\Event\MailAware::SALES_CHANNEL_ID => $scope,
+]);
+$flow->setConfig(['templateId' => $flowTemplateId]);
+$action = new Inocean\Messaging\Core\Flow\SendMessageAction(
+    $profiles,
+    new Inocean\Messaging\Core\Service\SmsTemplateService($db, $renderer),
+    $memberMessaging,
+);
+$before = count($bus->messages);
+rejects(fn() => $action->handleFlow($flow), 'Flow requires independent transactional SMS authorization');
+$consent->record($scope, $memberPhone, 'transactional_authorization', 'flow-test', 'Password change notification');
+$action->handleFlow($flow);
+$flowMessage = $db->fetchAssociative('SELECT status, body_cipher, phone_cipher, LOWER(HEX(customer_id)) customer_id FROM ino_sms_message WHERE template_code=?', ['flow_password_changed']);
+check(
+    count($bus->messages) === $before + 1 && $flowMessage['status'] === 'queued'
+    && $flowMessage['customer_id'] === $memberId && $privacy->open($flowMessage['phone_cipher']) === $memberPhone
+    && str_starts_with($privacy->open($flowMessage['body_cipher']), 'Alex，您的密码已更改。'),
+    'Flow queues the localized SMS for the triggering customer',
+);
+$db->update('ino_sms_template', ['scope_id' => Uuid::fromHexToBytes($other)], ['id' => Uuid::fromHexToBytes($flowTemplateId)]);
+rejects(fn() => $action->handleFlow($flow), 'Flow rejects a template from another sales channel');
+$db->update('ino_sms_template', ['scope_id' => Uuid::fromHexToBytes($scope), 'active' => 0], ['id' => Uuid::fromHexToBytes($flowTemplateId)]);
+rejects(fn() => $action->handleFlow($flow), 'Flow rejects an inactive template');
+check(count($bus->messages) === $before + 1, 'Rejected Flow actions dispatch no SMS');
+$db->delete('ino_sms_consent', ['source' => 'flow-test']);
+$db->executeStatement('UPDATE customer SET language_id=UNHEX(?) WHERE id=UNHEX(?)', [md5('en-CA'), $memberId]);
+
 $controller=new Inocean\Messaging\Api\UnsubscribeController($tokens,$subscriptions,Inocean\Messaging\Core\Service\MessagingTranslationFactory::create());
 foreach ([
     ['/unsubscribe', null, 'en-GB', 'Unsubscribe'],
