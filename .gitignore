@@ -1,0 +1,19 @@
+.DS_Store
+src/.DS_Store
+src/Resources/.DS_Store
+vendor
+.superpowers/
+
+# Tests — kept locally, excluded from the published source
+# Tests and their phpunit config ARE tracked. They were ignored for years, and
+# the cost showed up the moment two branches were open at once: test files do
+# not follow a branch, so one branch's specs sit on disk running the other
+# branch's code and invent failures that look like regressions. A fresh clone
+# also had no way to run the suite at all.
+#
+# The DSN that used to be hardcoded in phpunit.xml.dist — which is what kept
+# that file unpublishable — now lives in the project root's .env.test.local,
+# outside every repository.
+.phpunit.cache/
+.phpunit.result.cache
+/coverage/
